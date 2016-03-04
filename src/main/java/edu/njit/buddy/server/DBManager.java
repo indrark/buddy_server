@@ -41,8 +41,21 @@ public class DBManager {
     }
 
     public void register(String email, String username, String password) throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                "SELECT *\n" +
+                        "FROM\n" +
+                        "\t(SELECT count(uid) AS group_a\n" +
+                        "\t FROM user\n" +
+                        "     WHERE test_group = 0) AS group_a,\n" +
+                        "\t(SELECT count(uid) AS group_b\n" +
+                        "\t FROM user\n" +
+                        "     WHERE test_group = 1) AS group_b");
+        result.next();
+        int group_a = result.getInt("group_a");
+        int group_b = result.getInt("group_b");
         String sql = String.format(
-                "INSERT INTO user (email, username, password) VALUES ('%s', '%s', '%s')", email, username, password);
+                "INSERT INTO user (email, username, password, test_group) VALUES ('%s', '%s', '%s', %d)",
+                email, username, password, group_a >= group_b ? 1 : 0);
         getContext().getDBConnector().executeUpdate(sql);
     }
 
