@@ -49,6 +49,7 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new FlagService(this), "/post/flag");
         getHttpServer().getServerConfiguration().addHttpHandler(new BellService(this), "/post/bell");
         getHttpServer().getServerConfiguration().addHttpHandler(new HugService(this), "/post/hug");
+        getHttpServer().getServerConfiguration().addHttpHandler(new HugListService(this), "/post/hug/list");
         getHttpServer().getServerConfiguration().addHttpHandler(new PostListService(this), "/post/list");
     }
 

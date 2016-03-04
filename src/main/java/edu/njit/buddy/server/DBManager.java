@@ -2,6 +2,7 @@ package edu.njit.buddy.server;
 
 import edu.njit.buddy.server.util.Encoder;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.ResultSet;
@@ -107,7 +108,7 @@ public class DBManager {
         }
     }
 
-    public JSONObject listPost(int uid, int page) throws SQLException {
+    public JSONObject listPosts(int uid, int page) throws SQLException {
         String sql = String.format(
                 "SELECT \n" +
                         "\tpost.pid, \n" +
@@ -152,13 +153,13 @@ public class DBManager {
                         "LIMIT %d, %d",
                 uid, uid, uid, page * 10, 10);
         ResultSet result = getContext().getDBConnector().executeQuery(sql);
-        JSONObject response = new JSONObject();
         JSONArray posts = createPostList(result);
+        JSONObject response = new JSONObject();
         response.put("posts", posts);
         return response;
     }
 
-    public JSONObject listPost(int uid, int page, int category) throws SQLException {
+    public JSONObject listPosts(int uid, int page, int category) throws SQLException {
         String sql = String.format(
                 "SELECT \n" +
                         "\tpost.pid, \n" +
@@ -204,13 +205,13 @@ public class DBManager {
                         "LIMIT %d, %d",
                 uid, uid, uid, category, page * 10, 10);
         ResultSet result = getContext().getDBConnector().executeQuery(sql);
-        JSONObject response = new JSONObject();
         JSONArray posts = createPostList(result);
+        JSONObject response = new JSONObject();
         response.put("posts", posts);
         return response;
     }
 
-    public JSONObject listAttention(int uid, int page) throws SQLException {
+    public JSONObject listAttentions(int uid, int page) throws SQLException {
         String sql = String.format(
                 "SELECT \n" +
                         "\tpost.pid, \n" +
@@ -262,8 +263,8 @@ public class DBManager {
                         "LIMIT %d, %d",
                 uid, uid, uid, page * 10, 10);
         ResultSet result = getContext().getDBConnector().executeQuery(sql);
-        JSONObject response = new JSONObject();
         JSONArray posts = createPostList(result);
+        JSONObject response = new JSONObject();
         response.put("posts", posts);
         return response;
     }
@@ -285,6 +286,35 @@ public class DBManager {
             posts.put(post);
         }
         return posts;
+    }
+
+    public JSONObject listHugs(int pid, int page) throws SQLException, JSONException {
+        String sql = String.format(
+                "SELECT\n" +
+                        "\tuser.uid, user.username\n" +
+                        "FROM\n" +
+                        "\tuser, hug\n" +
+                        "WHERE\n" +
+                        "\tuser.uid = hug.uid AND hug.pid = %d\n" +
+                        "ORDER BY timestamp DESC\n" +
+                        "LIMIT %d, %d",
+                pid, page * 10, 10);
+        ResultSet result = getContext().getDBConnector().executeQuery(sql);
+        JSONArray hugs = createHugList(result);
+        JSONObject response = new JSONObject();
+        response.put("hugs", hugs);
+        return response;
+    }
+
+    public JSONArray createHugList(ResultSet result) throws SQLException, JSONException {
+        JSONArray hugs = new JSONArray();
+        while (result.next()) {
+            JSONObject hug = new JSONObject();
+            hug.put("uid", result.getInt("uid"));
+            hug.put("username", result.getString("username"));
+            hugs.put(hug);
+        }
+        return hugs;
     }
 
 }

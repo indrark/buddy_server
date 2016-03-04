@@ -22,12 +22,12 @@ public class PostListService extends Service {
         int category = request.getInt("category");
         int attention = request.getInt("attention");
         if (attention == 1) {
-            JSONObject response_content = getContext().getDBManager().listAttention(getUID(), page);
+            JSONObject response_content = getContext().getDBManager().listAttentions(getUID(), page);
             onSuccess(response, response_content);
         } else {
             JSONObject response_content = category >= 0 ?
-                    getContext().getDBManager().listPost(getUID(), page, category) :
-                    getContext().getDBManager().listPost(getUID(), page);
+                    getContext().getDBManager().listPosts(getUID(), page, category) :
+                    getContext().getDBManager().listPosts(getUID(), page);
             onSuccess(response, response_content);
         }
     }
