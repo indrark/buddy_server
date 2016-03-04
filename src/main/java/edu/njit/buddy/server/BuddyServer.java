@@ -1,9 +1,6 @@
 package edu.njit.buddy.server;
 
-import edu.njit.buddy.server.service.LoginService;
-import edu.njit.buddy.server.service.PostCreateService;
-import edu.njit.buddy.server.service.PostListService;
-import edu.njit.buddy.server.service.RegisterService;
+import edu.njit.buddy.server.service.*;
 import org.glassfish.grizzly.http.server.HttpServer;
 
 import java.io.File;
@@ -49,6 +46,9 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new RegisterService(this), "/register");
         getHttpServer().getServerConfiguration().addHttpHandler(new LoginService(this), "/login");
         getHttpServer().getServerConfiguration().addHttpHandler(new PostCreateService(this), "/post/create");
+        getHttpServer().getServerConfiguration().addHttpHandler(new FlagService(this), "/post/flag");
+        getHttpServer().getServerConfiguration().addHttpHandler(new BellService(this), "/post/bell");
+        getHttpServer().getServerConfiguration().addHttpHandler(new HugService(this), "/post/hug");
         getHttpServer().getServerConfiguration().addHttpHandler(new PostListService(this), "/post/list");
     }
 
