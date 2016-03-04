@@ -12,6 +12,7 @@ public class DBConnector {
     public void connect(String host, String name, String username, String password) throws SQLException {
         connection = DriverManager.getConnection(
                 String.format("jdbc:mysql://%s/%s?user=%s&password=%s", host, name, username, password));
+        executeUpdate("SET time_zone = \"-5:00\"");
     }
 
     public Connection getConnection() {
