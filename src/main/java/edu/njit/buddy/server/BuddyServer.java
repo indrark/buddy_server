@@ -6,7 +6,6 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -27,7 +26,9 @@ public class BuddyServer implements Context {
 
     private DBManager db_manager;
 
-    public void initialize() throws IOException, SQLException, NoSuchAlgorithmException {
+    private HugBot hug_bot;
+
+    public void initialize() throws IOException, SQLException, ServerException {
         Properties properties = loadConfiguration();
 
         int server_port = Integer.parseInt(properties.getProperty("SERVER_PORT", "80"));
@@ -42,6 +43,15 @@ public class BuddyServer implements Context {
         getDBConnector().connect(database_host, database_name, database_username, database_password);
 
         this.db_manager = new DBManager(this);
+
+        try {
+            int bot_uid = Integer.parseInt(properties.getProperty("HUGBOT_BOT_UID", "NULL"));
+            int male_uid = Integer.parseInt(properties.getProperty("HUGBOT_MALE_UID", "NULL"));
+            int female_uid = Integer.parseInt(properties.getProperty("HUGBOT_FEMALE_UID", "NULL"));
+            this.hug_bot = new HugBot(this, bot_uid, male_uid, female_uid);
+        } catch (NumberFormatException ex) {
+            throw new ServerException("Hug bot uid is not specified correctly", ex);
+        }
 
         getHttpServer().getServerConfiguration().addHttpHandler(new RegisterService(this), "/register");
         getHttpServer().getServerConfiguration().addHttpHandler(new LoginService(this), "/login");
@@ -62,6 +72,7 @@ public class BuddyServer implements Context {
 
     public void start() throws IOException, InterruptedException {
         server.start();
+        hug_bot.start();
         synchronized (SERVER_LOCK) {
             SERVER_LOCK.wait();
         }
@@ -97,12 +108,10 @@ public class BuddyServer implements Context {
                     server.start();
                 } catch (InterruptedException ex) {
                     logger.log(Level.SEVERE, "Server was interrupted.");
-                } catch (IOException ex) {
+                } catch (ServerException | IOException ex) {
                     logger.log(Level.SEVERE, "Error starting server: " + ex.toString());
                 } catch (SQLException ex) {
                     logger.log(Level.SEVERE, "Error connecting to database: " + ex.toString());
-                } catch (NoSuchAlgorithmException ex) {
-                    logger.log(Level.SEVERE, "MD5 encoding is not supported by local JRE.");
                 }
             }
         };
