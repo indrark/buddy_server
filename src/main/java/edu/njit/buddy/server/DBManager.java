@@ -123,6 +123,12 @@ public class DBManager {
         }
     }
 
+    public void comment(int uid, int pid, String content) throws SQLException {
+        String sql = String.format(
+                "INSERT INTO comment (uid, pid, content, timestamp) VALUES (%d, %d, '%s', now())", uid, pid, content);
+        getContext().getDBConnector().executeUpdate(sql);
+    }
+
     public JSONObject listPosts(int uid, int page) throws SQLException {
         String sql = String.format(
                 "SELECT \n" +
@@ -143,17 +149,17 @@ public class DBManager {
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid \n" +
                         "\tGROUP BY post.pid) AS hugs,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(hug.uid) AS hugged \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
                         "\tGROUP BY post.pid) AS hugged,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(bell.uid) AS belled \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN bell ON post.pid = bell.pid AND bell.uid = %d\n" +
                         "\tGROUP BY post.pid) AS belled,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(flag.uid) AS flagged \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN flag ON post.pid = flag.pid AND flag.uid = %d\n" +
@@ -194,17 +200,17 @@ public class DBManager {
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid \n" +
                         "\tGROUP BY post.pid) AS hugs,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(hug.uid) AS hugged \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
                         "\tGROUP BY post.pid) AS hugged,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(bell.uid) AS belled \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN bell ON post.pid = bell.pid AND bell.uid = %d\n" +
                         "\tGROUP BY post.pid) AS belled,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(flag.uid) AS flagged \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN flag ON post.pid = flag.pid AND flag.uid = %d\n" +
@@ -246,22 +252,22 @@ public class DBManager {
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid \n" +
                         "\tGROUP BY post.pid) AS hugs,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(bell.bid) AS bells \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN bell ON post.pid = bell.pid \n" +
                         "\tGROUP BY post.pid) AS bells,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(hug.uid) AS hugged \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
                         "\tGROUP BY post.pid) AS hugged,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(bell.uid) AS belled \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN bell ON post.pid = bell.pid AND bell.uid = %d\n" +
                         "\tGROUP BY post.pid) AS belled,\n" +
-                        "    (SELECT \n" +
+                        "\t(SELECT \n" +
                         "\t\tpost.pid, count(flag.uid) AS flagged \n" +
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN flag ON post.pid = flag.pid AND flag.uid = %d\n" +
@@ -330,6 +336,38 @@ public class DBManager {
             hugs.put(hug);
         }
         return hugs;
+    }
+
+    public JSONObject listComments(int pid, int page) throws SQLException, JSONException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                String.format(
+                        "SELECT\n" +
+                                "\tuser.uid,\n" +
+                                "\tusername,\n" +
+                                "\ttimestamp,\n" +
+                                "\tcontent\n" +
+                                "FROM\n" +
+                                "\tuser, comment\n" +
+                                "WHERE\n" +
+                                "\tuser.uid = comment.uid AND comment.pid = %d\n" +
+                                "LIMIT %d, %d", pid, page * 10, 10));
+        JSONArray comments = createCommentList(result);
+        JSONObject response = new JSONObject();
+        response.put("comments", comments);
+        return response;
+    }
+
+    private JSONArray createCommentList(ResultSet result) throws SQLException, JSONException {
+        JSONArray comments = new JSONArray();
+        while (result.next()) {
+            JSONObject comment = new JSONObject();
+            comment.put("uid", result.getInt("uid"));
+            comment.put("username", result.getString("username"));
+            comment.put("timestamp", result.getTimestamp("timestamp").getTime());
+            comment.put("content", result.getString("content"));
+            comments.put(comment);
+        }
+        return comments;
     }
 
     public JSONObject profileView(int request_uid, int target_uid)
