@@ -2,6 +2,7 @@ package edu.njit.buddy.server;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -18,23 +19,7 @@ public class HugBot {
     private final int female_uid;
 
     private final Timer bot_timer;
-    private final Timer male_timer;
-    private final Timer female_timer;
-
-    private final String post_list_sql =
-            "SELECT\n" +
-                    "\tpost.pid\n" +
-                    "FROM\n" +
-                    "\tpost, user,\n" +
-                    "    (SELECT\n" +
-                    "\t\tpost.pid, count(hug.hid) AS hugged\n" +
-                    "\t FROM post LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
-                    "\t GROUP BY post.pid) AS hugged\n" +
-                    "WHERE\n" +
-                    "\tpost.pid = hugged.pid AND\n" +
-                    "    post.uid = user.uid AND\n" +
-                    "    user.test_group = %d AND\n" +
-                    "    hugged.hugged = 0";
+    private final Timer human_timer;
 
     public HugBot(Context context, int bot_uid, int male_uid, int female_uid) {
         this.context = context;
@@ -42,8 +27,7 @@ public class HugBot {
         this.male_uid = male_uid;
         this.female_uid = female_uid;
         this.bot_timer = new Timer();
-        this.male_timer = new Timer();
-        this.female_timer = new Timer();
+        this.human_timer = new Timer();
     }
 
     public Context getContext() {
@@ -64,28 +48,52 @@ public class HugBot {
 
     public void start() {
         bot_timer.scheduleAtFixedRate(bot_task, 1000, 60000);
-        male_timer.scheduleAtFixedRate(male_task, 2000, 60000);
-        female_timer.scheduleAtFixedRate(female_task, 3000, 480000);
+        human_timer.scheduleAtFixedRate(human_task, 2000, 600000);
     }
 
     private void serviceBot() throws SQLException {
-        ResultSet result = getContext().getDBConnector().executeQuery(String.format(post_list_sql, getBotUID(), 0));
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                String.format("SELECT\n" +
+                                "\tpost.pid\n" +
+                                "FROM\n" +
+                                "\tpost, user,\n" +
+                                "    (SELECT\n" +
+                                "\t\tpost.pid, count(hug.hid) AS hugged\n" +
+                                "\t FROM post LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
+                                "\t GROUP BY post.pid) AS hugged\n" +
+                                "WHERE\n" +
+                                "\tpost.pid = hugged.pid AND\n" +
+                                "    post.uid = user.uid AND\n" +
+                                "    user.test_group = %d AND\n" +
+                                "    hugged.hugged = 0",
+                        getBotUID(), 0));
         while (result.next()) {
             getContext().getDBManager().hug(getBotUID(), result.getInt("pid"));
         }
     }
 
-    private void serviceMale() throws SQLException {
-        ResultSet result = getContext().getDBConnector().executeQuery(String.format(post_list_sql, getMaleUID(), 1));
+    private void serviceHuman() throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                String.format("SELECT\n" +
+                        "\tpost.pid\n" +
+                        "FROM\n" +
+                        "\tpost, user,\n" +
+                        "    (SELECT\n" +
+                        "\t\tpost.pid, count(hug.hid) AS hugged\n" +
+                        "\t FROM post LEFT OUTER JOIN hug ON post.pid = hug.pid AND （hug.uid = %d OR hug.uid = %d)\n" +
+                        "\t GROUP BY post.pid) AS hugged\n" +
+                        "WHERE\n" +
+                        "\tpost.pid = hugged.pid AND\n" +
+                        "    post.uid = user.uid AND\n" +
+                        "    user.test_group = %d AND\n" +
+                        "    hugged.hugged = 0", getMaleUID(), getFemaleUID(), 1));
+        int select = new Random().nextInt(2);
         while (result.next()) {
-            getContext().getDBManager().hug(getMaleUID(), result.getInt("pid"));
-        }
-    }
-
-    private void serviceFemale() throws SQLException {
-        ResultSet result = getContext().getDBConnector().executeQuery(String.format(post_list_sql, getFemaleUID(), 1));
-        while (result.next()) {
-            getContext().getDBManager().hug(getFemaleUID(), result.getInt("pid"));
+            if(select == 1) {
+                getContext().getDBManager().hug(getMaleUID(), result.getInt("pid"));
+            } else {
+                getContext().getDBManager().hug(getFemaleUID(), result.getInt("pid"));
+            }
         }
     }
 
@@ -100,24 +108,13 @@ public class HugBot {
         }
     };
 
-    private final TimerTask male_task = new TimerTask() {
+    private final TimerTask human_task = new TimerTask() {
         @Override
         public void run() {
             try {
-                serviceMale();
+                serviceHuman();
             } catch (SQLException ex) {
-                getContext().getLogger().log(Level.SEVERE, "Male bot service error: " + ex.toString());
-            }
-        }
-    };
-
-    private final TimerTask female_task = new TimerTask() {
-        @Override
-        public void run() {
-            try {
-                serviceFemale();
-            } catch (SQLException ex) {
-                getContext().getLogger().log(Level.SEVERE, "Female bot service error: " + ex.toString());
+                getContext().getLogger().log(Level.SEVERE, "Human bot service error: " + ex.toString());
             }
         }
     };
