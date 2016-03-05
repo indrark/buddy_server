@@ -80,7 +80,7 @@ public class HugBot {
                         "\tpost, user,\n" +
                         "    (SELECT\n" +
                         "\t\tpost.pid, count(hug.hid) AS hugged\n" +
-                        "\t FROM post LEFT OUTER JOIN hug ON post.pid = hug.pid AND （hug.uid = %d OR hug.uid = %d)\n" +
+                        "\t FROM post LEFT OUTER JOIN hug ON post.pid = hug.pid AND (hug.uid = %d OR hug.uid = %d)\n" +
                         "\t GROUP BY post.pid) AS hugged\n" +
                         "WHERE\n" +
                         "\tpost.pid = hugged.pid AND\n" +
