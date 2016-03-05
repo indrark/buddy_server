@@ -350,6 +350,7 @@ public class DBManager {
                                 "\tuser, comment\n" +
                                 "WHERE\n" +
                                 "\tuser.uid = comment.uid AND comment.pid = %d\n" +
+                                "ORDER BY timestamp DESC\n" +
                                 "LIMIT %d, %d", pid, page * 10, 10));
         JSONArray comments = createCommentList(result);
         JSONObject response = new JSONObject();
