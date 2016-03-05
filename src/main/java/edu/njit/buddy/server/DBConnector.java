@@ -9,10 +9,11 @@ public class DBConnector {
 
     private Connection connection;
 
-    public void connect(String host, String name, String username, String password) throws SQLException {
+    public void connect(String host, String name, String timezone, String username, String password)
+            throws SQLException {
         connection = DriverManager.getConnection(
                 String.format("jdbc:mysql://%s/%s?user=%s&password=%s", host, name, username, password));
-        executeUpdate("SET time_zone = \"-5:00\"");
+        executeUpdate(String.format("SET time_zone = \"%s\"", timezone));
     }
 
     public Connection getConnection() {

@@ -38,9 +38,10 @@ public class BuddyServer implements Context {
         this.db_connector = new DBConnector();
         String database_host = properties.getProperty("DATABASE_HOST", "127.0.0.1");
         String database_name = properties.getProperty("DATABASE_NAME", "buddy");
+        String database_timezone = properties.getProperty("DATABASE_TIMEZONE", "-5:00");
         String database_username = properties.getProperty("DATABASE_USERNAME", "super_buddy");
         String database_password = properties.getProperty("DATABASE_PASSWORD", "buddy_password");
-        getDBConnector().connect(database_host, database_name, database_username, database_password);
+        getDBConnector().connect(database_host, database_name, database_timezone, database_username, database_password);
 
         this.db_manager = new DBManager(this);
 

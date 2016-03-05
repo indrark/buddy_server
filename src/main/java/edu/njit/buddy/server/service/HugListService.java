@@ -25,4 +25,5 @@ public class HugListService extends Service {
         JSONObject response_content = getContext().getDBManager().listHugs(pid, page);
         onSuccess(response, response_content);
     }
+
 }
