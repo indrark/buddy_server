@@ -1,5 +1,7 @@
 package edu.njit.buddy.server;
 
+import edu.njit.buddy.server.service.NotAuthorizedException;
+import edu.njit.buddy.server.service.UserNotFoundException;
 import edu.njit.buddy.server.util.Encoder;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -328,6 +330,49 @@ public class DBManager {
             hugs.put(hug);
         }
         return hugs;
+    }
+
+    public JSONObject profileView(int request_uid, int target_uid)
+            throws SQLException, JSONException, UserNotFoundException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                String.format(
+                        "SELECT\n" +
+                                "\tusername,\n" +
+                                "    description,\n" +
+                                "    description_open,\n" +
+                                "    birthday,\n" +
+                                "    birthday_open,\n" +
+                                "    gender,\n" +
+                                "    gender_open,\n" +
+                                "    sexuality,\n" +
+                                "    sexuality_open,\n" +
+                                "    race,\n" +
+                                "    race_open\n" +
+                                "FROM user\n" +
+                                "WHERE uid = %d", target_uid));
+
+        if (result.next()) {
+            JSONObject response = new JSONObject();
+            response.put("username", result.getString("username"));
+            if (request_uid == target_uid || result.getInt("description_open") == 1) {
+                response.put("description", result.getString("description"));
+            }
+            if (request_uid == target_uid || result.getInt("birthday_open") == 1) {
+                response.put("birthday", result.getString("birthday"));
+            }
+            if (request_uid == target_uid || result.getInt("gender_open") == 1) {
+                response.put("gender", result.getString("gender"));
+            }
+            if (request_uid == target_uid || result.getInt("sexuality_open") == 1) {
+                response.put("sexuality", result.getString("sexuality"));
+            }
+            if (request_uid == target_uid || result.getInt("race_open") == 1) {
+                response.put("race", result.getString("race"));
+            }
+            return response;
+        } else {
+            throw new UserNotFoundException();
+        }
     }
 
 }

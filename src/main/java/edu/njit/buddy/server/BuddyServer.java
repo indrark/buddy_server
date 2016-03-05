@@ -45,10 +45,12 @@ public class BuddyServer implements Context {
         this.db_manager = new DBManager(this);
 
         try {
+            boolean bot_enabled = Boolean.parseBoolean(properties.getProperty("HUGBOT_ENABLED", "false"));
+
             int bot_uid = Integer.parseInt(properties.getProperty("HUGBOT_BOT_UID", "NULL"));
             int male_uid = Integer.parseInt(properties.getProperty("HUGBOT_MALE_UID", "NULL"));
             int female_uid = Integer.parseInt(properties.getProperty("HUGBOT_FEMALE_UID", "NULL"));
-            this.hug_bot = new HugBot(this, bot_uid, male_uid, female_uid);
+            this.hug_bot = new HugBot(this, bot_enabled, bot_uid, male_uid, female_uid);
         } catch (NumberFormatException ex) {
             throw new ServerException("Hug bot uid is not specified correctly", ex);
         }
@@ -61,6 +63,7 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new HugService(this), "/post/hug");
         getHttpServer().getServerConfiguration().addHttpHandler(new HugListService(this), "/post/hug/list");
         getHttpServer().getServerConfiguration().addHttpHandler(new PostListService(this), "/post/list");
+        getHttpServer().getServerConfiguration().addHttpHandler(new ProfileViewService(this), "/profile/view");
     }
 
     private Properties loadConfiguration() throws IOException {

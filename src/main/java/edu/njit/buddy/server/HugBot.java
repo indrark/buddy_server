@@ -14,6 +14,8 @@ public class HugBot {
 
     private final Context context;
 
+    private final boolean enabled;
+
     private final int bot_uid;
     private final int male_uid;
     private final int female_uid;
@@ -21,8 +23,9 @@ public class HugBot {
     private final Timer bot_timer;
     private final Timer human_timer;
 
-    public HugBot(Context context, int bot_uid, int male_uid, int female_uid) {
+    public HugBot(Context context, boolean enabled, int bot_uid, int male_uid, int female_uid) {
         this.context = context;
+        this.enabled = enabled;
         this.bot_uid = bot_uid;
         this.male_uid = male_uid;
         this.female_uid = female_uid;
@@ -47,8 +50,10 @@ public class HugBot {
     }
 
     public void start() {
-        bot_timer.scheduleAtFixedRate(bot_task, 1000, 60000);
-        human_timer.scheduleAtFixedRate(human_task, 2000, 600000);
+        if (enabled) {
+            bot_timer.scheduleAtFixedRate(bot_task, 1000, 60000);
+            human_timer.scheduleAtFixedRate(human_task, 2000, 600000);
+        }
     }
 
     private void serviceBot() throws SQLException {
@@ -89,7 +94,7 @@ public class HugBot {
                         "    hugged.hugged = 0", getMaleUID(), getFemaleUID(), 1));
         int select = new Random().nextInt(2);
         while (result.next()) {
-            if(select == 1) {
+            if (select == 1) {
                 getContext().getDBManager().hug(getMaleUID(), result.getInt("pid"));
             } else {
                 getContext().getDBManager().hug(getFemaleUID(), result.getInt("pid"));

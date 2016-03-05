@@ -19,6 +19,8 @@ public class ResponseCode {
 
     public static final int PASSWORD_OR_EMAIL_MISS_MATCH = 5;
 
+    public static final int USER_NOT_FOUND = 6;
+
     public static final int LOGIN_REQUIRED = 100;
 
     public static final int REQUEST_NOT_SUPPORTED = 200;

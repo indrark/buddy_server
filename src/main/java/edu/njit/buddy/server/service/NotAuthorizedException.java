@@ -1,4 +1,4 @@
-package edu.njit.buddy.server;
+package edu.njit.buddy.server.service;
 
 /**
  * @author toyknight 3/3/2016.

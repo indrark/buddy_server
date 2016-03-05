@@ -1,7 +1,6 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.Context;
-import edu.njit.buddy.server.NotAuthorizedException;
 import edu.njit.buddy.server.ResponseCode;
 import edu.njit.buddy.server.ServerException;
 import org.glassfish.grizzly.http.server.HttpHandler;
@@ -61,6 +60,7 @@ public abstract class Service extends HttpHandler {
             onFail(response, ResponseCode.BAD_REQUEST);
         } catch (ServerException | SQLException | IOException ex) {
             onFail(response, ResponseCode.SERVER_ERROR);
+            ex.printStackTrace();
         } catch (NotAuthorizedException e) {
             onFail(response, ResponseCode.LOGIN_REQUIRED);
         }
