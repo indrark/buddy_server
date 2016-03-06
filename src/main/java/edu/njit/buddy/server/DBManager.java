@@ -45,8 +45,7 @@ public class DBManager {
                         "WHERE\n" +
                         "\tuser.uid = latest_user.uid");
         if (result.next()) {
-            int latest_test_group = result.getInt("test_group");
-            return latest_test_group < 2 ? latest_test_group + 1 : 0;
+            return result.getInt("test_group");
         } else {
             return 0;
         }
