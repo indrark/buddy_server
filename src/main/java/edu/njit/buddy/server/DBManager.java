@@ -32,6 +32,26 @@ public class DBManager {
         return result.getInt(1) == 0;
     }
 
+    public int getCurrentTestGroup() throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                "SELECT\n" +
+                        "\ttest_group\n" +
+                        "FROM\n" +
+                        "\tuser,\n" +
+                        "    (SELECT \n" +
+                        "\t\tmax(uid) AS uid\n" +
+                        "\t FROM \n" +
+                        "\t\tuser) AS latest_user\n" +
+                        "WHERE\n" +
+                        "\tuser.uid = latest_user.uid");
+        if (result.next()) {
+            int latest_test_group = result.getInt("test_group");
+            return latest_test_group < 2 ? latest_test_group + 1 : 0;
+        } else {
+            return 0;
+        }
+    }
+
     public int getUID(String authorization) throws SQLException, NotAuthorizedException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 String.format("SELECT uid FROM user WHERE authorization = '%s'", authorization));
@@ -42,22 +62,10 @@ public class DBManager {
         }
     }
 
-    public void register(String email, String username, String password) throws SQLException {
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                "SELECT *\n" +
-                        "FROM\n" +
-                        "\t(SELECT count(uid) AS group_a\n" +
-                        "\t FROM user\n" +
-                        "     WHERE test_group = 0) AS group_a,\n" +
-                        "\t(SELECT count(uid) AS group_b\n" +
-                        "\t FROM user\n" +
-                        "     WHERE test_group = 1) AS group_b");
-        result.next();
-        int group_a = result.getInt("group_a");
-        int group_b = result.getInt("group_b");
+    public void register(String email, String username, String password, int test_group) throws SQLException {
         String sql = String.format(
                 "INSERT INTO user (email, username, password, test_group) VALUES ('%s', '%s', '%s', %d)",
-                email, username, password, group_a >= group_b ? 1 : 0);
+                email, username, password, test_group);
         getContext().getDBConnector().executeUpdate(sql);
     }
 
@@ -139,6 +147,7 @@ public class DBManager {
                         "    post.category, \n" +
                         "    post.content, \n" +
                         "    hugs.hugs, \n" +
+                        "    comments.comments, \n" +
                         "    hugged.hugged, \n" +
                         "    belled.belled, \n" +
                         "    flagged.flagged\n" +
@@ -149,6 +158,11 @@ public class DBManager {
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid \n" +
                         "\tGROUP BY post.pid) AS hugs,\n" +
+                        "\t(SELECT \n" +
+                        "\t\tpost.pid, count(comment.cid) AS comments \n" +
+                        "\tFROM \n" +
+                        "\t\tpost LEFT OUTER JOIN comment ON post.pid = comment.pid \n" +
+                        "\tGROUP BY post.pid) AS comments,\n" +
                         "\t(SELECT \n" +
                         "\t\tpost.pid, count(hug.uid) AS hugged \n" +
                         "\tFROM \n" +
@@ -167,6 +181,7 @@ public class DBManager {
                         "WHERE\n" +
                         "\tpost.uid = user.uid \n" +
                         "    AND post.pid = hugs.pid \n" +
+                        "    AND post.pid = comments.pid \n" +
                         "    AND post.pid = hugged.pid \n" +
                         "    AND post.pid = belled.pid \n" +
                         "    AND post.pid = flagged.pid\n" +
@@ -190,6 +205,7 @@ public class DBManager {
                         "    post.category, \n" +
                         "    post.content, \n" +
                         "    hugs.hugs, \n" +
+                        "    comments.comments, \n" +
                         "    hugged.hugged, \n" +
                         "    belled.belled, \n" +
                         "    flagged.flagged\n" +
@@ -200,6 +216,11 @@ public class DBManager {
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid \n" +
                         "\tGROUP BY post.pid) AS hugs,\n" +
+                        "\t(SELECT \n" +
+                        "\t\tpost.pid, count(comment.cid) AS comments \n" +
+                        "\tFROM \n" +
+                        "\t\tpost LEFT OUTER JOIN comment ON post.pid = comment.pid \n" +
+                        "\tGROUP BY post.pid) AS comments,\n" +
                         "\t(SELECT \n" +
                         "\t\tpost.pid, count(hug.uid) AS hugged \n" +
                         "\tFROM \n" +
@@ -218,6 +239,7 @@ public class DBManager {
                         "WHERE\n" +
                         "\tpost.uid = user.uid \n" +
                         "    AND post.pid = hugs.pid \n" +
+                        "    AND post.pid = comments.pid \n" +
                         "    AND post.pid = hugged.pid \n" +
                         "    AND post.pid = belled.pid \n" +
                         "    AND post.pid = flagged.pid\n" +
@@ -242,6 +264,7 @@ public class DBManager {
                         "    post.category, \n" +
                         "    post.content, \n" +
                         "    hugs.hugs, \n" +
+                        "    comments.comments, \n" +
                         "    hugged.hugged, \n" +
                         "    belled.belled, \n" +
                         "    flagged.flagged\n" +
@@ -257,6 +280,11 @@ public class DBManager {
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN bell ON post.pid = bell.pid \n" +
                         "\tGROUP BY post.pid) AS bells,\n" +
+                        "\t(SELECT \n" +
+                        "\t\tpost.pid, count(comment.cid) AS comments \n" +
+                        "\tFROM \n" +
+                        "\t\tpost LEFT OUTER JOIN comment ON post.pid = comment.pid \n" +
+                        "\tGROUP BY post.pid) AS comments,\n" +
                         "\t(SELECT \n" +
                         "\t\tpost.pid, count(hug.uid) AS hugged \n" +
                         "\tFROM \n" +
@@ -276,6 +304,7 @@ public class DBManager {
                         "\tpost.uid = user.uid \n" +
                         "    AND post.pid = hugs.pid \n" +
                         "    AND post.pid = bells.pid\n" +
+                        "    AND post.pid = comments.pid \n" +
                         "    AND post.pid = hugged.pid \n" +
                         "    AND post.pid = belled.pid \n" +
                         "    AND post.pid = flagged.pid\n" +
@@ -301,6 +330,7 @@ public class DBManager {
             post.put("category", result.getInt("category"));
             post.put("content", result.getString("content"));
             post.put("hugs", result.getInt("hugs"));
+            post.put("comments", result.getInt("comments"));
             post.put("hugged", result.getInt("hugged"));
             post.put("belled", result.getInt("belled"));
             post.put("flagged", result.getInt("flagged"));

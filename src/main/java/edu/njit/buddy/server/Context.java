@@ -18,4 +18,6 @@ public interface Context {
 
     DBConnector getDBConnector();
 
+    int getNextTestGroup();
+
 }

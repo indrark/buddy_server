@@ -28,6 +28,8 @@ public class BuddyServer implements Context {
 
     private HugBot hug_bot;
 
+    private int current_test_group;
+
     public void initialize() throws IOException, SQLException, ServerException {
         Properties properties = loadConfiguration();
 
@@ -44,6 +46,7 @@ public class BuddyServer implements Context {
         getDBConnector().connect(database_host, database_name, database_timezone, database_username, database_password);
 
         this.db_manager = new DBManager(this);
+        this.current_test_group = getDBManager().getCurrentTestGroup();
 
         try {
             boolean bot_enabled = Boolean.parseBoolean(properties.getProperty("HUGBOT_ENABLED", "false"));
@@ -102,6 +105,11 @@ public class BuddyServer implements Context {
     @Override
     public DBConnector getDBConnector() {
         return db_connector;
+    }
+
+    @Override
+    public int getNextTestGroup() {
+        return current_test_group < 2 ? current_test_group + 1 : 0;
     }
 
     public static void main(String[] args) {
