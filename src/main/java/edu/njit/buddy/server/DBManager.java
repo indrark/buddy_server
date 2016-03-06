@@ -425,22 +425,62 @@ public class DBManager {
             if (request_uid == target_uid || result.getInt("description_open") == 1) {
                 response.put("description", result.getString("description"));
             }
+            response.put("description_open", result.getInt("description_open"));
             if (request_uid == target_uid || result.getInt("birthday_open") == 1) {
                 response.put("birthday", result.getString("birthday"));
             }
+            response.put("birthday_open", result.getInt("birthday_open"));
             if (request_uid == target_uid || result.getInt("gender_open") == 1) {
                 response.put("gender", result.getString("gender"));
             }
+            response.put("gender_open", result.getInt("gender_open"));
             if (request_uid == target_uid || result.getInt("sexuality_open") == 1) {
                 response.put("sexuality", result.getString("sexuality"));
             }
+            response.put("sexuality_open", result.getInt("sexuality_open"));
             if (request_uid == target_uid || result.getInt("race_open") == 1) {
                 response.put("race", result.getString("race"));
             }
+            response.put("race_open", result.getInt("race_open"));
             return response;
         } else {
             throw new UserNotFoundException();
         }
+    }
+
+    public void profileEdit(
+            int uid,
+            String username,
+            String description, int description_open,
+            String birthday, int birthday_open,
+            String gender, int gender_open,
+            String sexuality, int sexuality_open,
+            String race, int race_open) throws SQLException {
+        String sql = String.format(
+                "UPDATE\n" +
+                        "\tuser\n" +
+                        "SET\n" +
+                        "\tusername = '%s',\n" +
+                        "    description = '%s',\n" +
+                        "    description_open = %d,\n" +
+                        "    birthday = '%s',\n" +
+                        "    birthday_open = %d,\n" +
+                        "    gender = '%s',\n" +
+                        "    gender_open = %d,\n" +
+                        "    sexuality = '%s',\n" +
+                        "    sexuality_open = %d,\n" +
+                        "    race = '%s',\n" +
+                        "    race_open = %d\n" +
+                        "WHERE\n" +
+                        "\tuid = %d",
+                username,
+                description, description_open,
+                birthday, birthday_open,
+                gender, gender_open,
+                sexuality, sexuality_open,
+                race, race_open,
+                uid);
+        getContext().getDBConnector().executeUpdate(sql);
     }
 
 }
