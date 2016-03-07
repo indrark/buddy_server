@@ -71,6 +71,7 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new CommentListService(this), "/comment/list");
         getHttpServer().getServerConfiguration().addHttpHandler(new ProfileViewService(this), "/profile/view");
         getHttpServer().getServerConfiguration().addHttpHandler(new ProfileEditService(this), "/profile/edit");
+        getHttpServer().getServerConfiguration().addHttpHandler(new RecordService(this), "/record");
     }
 
     private Properties loadConfiguration() throws IOException {

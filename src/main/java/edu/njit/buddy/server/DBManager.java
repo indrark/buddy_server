@@ -483,4 +483,9 @@ public class DBManager {
         getContext().getDBConnector().executeUpdate(sql);
     }
 
+    public void record(int uid) throws SQLException {
+        getContext().getDBConnector().executeUpdate(
+                String.format("UPDATE user SET using_times = using_times + 1 WHERE uid = %d", uid));
+    }
+
 }
