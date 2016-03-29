@@ -21,6 +21,8 @@ public class ResponseCode {
 
     public static final int USER_NOT_FOUND = 6;
 
+    public static final int CONTENT_TOO_LONG = 7;
+
     public static final int LOGIN_REQUIRED = 100;
 
     public static final int REQUEST_NOT_SUPPORTED = 200;

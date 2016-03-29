@@ -19,17 +19,12 @@ public class PostListService extends Service {
     @Override
     public void service(JSONObject request, Response response) throws SQLException, JSONException {
         int page = request.getInt("page");
-        int category = request.getInt("category");
-        int attention = request.getInt("attention");
-        if (attention == 1) {
-            JSONObject response_content = getContext().getDBManager().listAttentions(getUID(), page);
-            onSuccess(response, response_content);
-        } else {
-            JSONObject response_content = category >= 0 ?
-                    getContext().getDBManager().listPosts(getUID(), page, category) :
-                    getContext().getDBManager().listPosts(getUID(), page);
-            onSuccess(response, response_content);
-        }
+        int category = request.has("category") ? request.getInt("category") : -1;
+        int attention = request.has("attention") ? request.getInt("attention") : 0;
+        int target_uid = request.has("target_uid") ? request.getInt("target_uid") : 0;
+        JSONObject response_content = getContext().getDBManager().listPosts(
+                getUID(), page, category, attention, target_uid);
+        onSuccess(response, response_content);
     }
 
 }

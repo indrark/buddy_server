@@ -136,137 +136,23 @@ public class DBManager {
         getContext().getDBConnector().executeUpdate(sql);
     }
 
-    public JSONObject listPosts(int uid, int page) throws SQLException {
+    public JSONObject listPosts(int uid, int page, int category, int attention, int target_uid) throws SQLException {
+        String category_replacer = category >= 0 ? "AND post.category = " + category : "";
+        String attention_replacer = attention == 1 ? "AND bells.bells >=2" : "";
+        String target_replacer = target_uid > 0 ? "AND post.uid = " + target_uid : "";
         String sql = String.format(
                 "SELECT \n" +
                         "\tpost.pid, \n" +
-                        "    post.uid, \n" +
-                        "    user.username, \n" +
-                        "    post.timestamp, \n" +
-                        "    post.category, \n" +
-                        "    post.content, \n" +
-                        "    hugs.hugs, \n" +
-                        "    comments.comments, \n" +
-                        "    hugged.hugged, \n" +
-                        "    belled.belled, \n" +
-                        "    flagged.flagged\n" +
-                        "FROM\n" +
-                        "\tuser, post,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(hug.hid) AS hugs \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid \n" +
-                        "\tGROUP BY post.pid) AS hugs,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(comment.cid) AS comments \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN comment ON post.pid = comment.pid \n" +
-                        "\tGROUP BY post.pid) AS comments,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(hug.uid) AS hugged \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
-                        "\tGROUP BY post.pid) AS hugged,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(bell.uid) AS belled \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN bell ON post.pid = bell.pid AND bell.uid = %d\n" +
-                        "\tGROUP BY post.pid) AS belled,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(flag.uid) AS flagged \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN flag ON post.pid = flag.pid AND flag.uid = %d\n" +
-                        "\tGROUP BY post.pid) AS flagged\n" +
-                        "WHERE\n" +
-                        "\tpost.uid = user.uid \n" +
-                        "    AND post.pid = hugs.pid \n" +
-                        "    AND post.pid = comments.pid \n" +
-                        "    AND post.pid = hugged.pid \n" +
-                        "    AND post.pid = belled.pid \n" +
-                        "    AND post.pid = flagged.pid\n" +
-                        "ORDER BY post.pid DESC\n" +
-                        "LIMIT %d, %d",
-                uid, uid, uid, page * 10, 10);
-        ResultSet result = getContext().getDBConnector().executeQuery(sql);
-        JSONArray posts = createPostList(result);
-        JSONObject response = new JSONObject();
-        response.put("posts", posts);
-        return response;
-    }
-
-    public JSONObject listPosts(int uid, int page, int category) throws SQLException {
-        String sql = String.format(
-                "SELECT \n" +
-                        "\tpost.pid, \n" +
-                        "    post.uid, \n" +
-                        "    user.username, \n" +
-                        "    post.timestamp, \n" +
-                        "    post.category, \n" +
-                        "    post.content, \n" +
-                        "    hugs.hugs, \n" +
-                        "    comments.comments, \n" +
-                        "    hugged.hugged, \n" +
-                        "    belled.belled, \n" +
-                        "    flagged.flagged\n" +
-                        "FROM\n" +
-                        "\tuser, post,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(hug.hid) AS hugs \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid \n" +
-                        "\tGROUP BY post.pid) AS hugs,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(comment.cid) AS comments \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN comment ON post.pid = comment.pid \n" +
-                        "\tGROUP BY post.pid) AS comments,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(hug.uid) AS hugged \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
-                        "\tGROUP BY post.pid) AS hugged,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(bell.uid) AS belled \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN bell ON post.pid = bell.pid AND bell.uid = %d\n" +
-                        "\tGROUP BY post.pid) AS belled,\n" +
-                        "\t(SELECT \n" +
-                        "\t\tpost.pid, count(flag.uid) AS flagged \n" +
-                        "\tFROM \n" +
-                        "\t\tpost LEFT OUTER JOIN flag ON post.pid = flag.pid AND flag.uid = %d\n" +
-                        "\tGROUP BY post.pid) AS flagged\n" +
-                        "WHERE\n" +
-                        "\tpost.uid = user.uid \n" +
-                        "    AND post.pid = hugs.pid \n" +
-                        "    AND post.pid = comments.pid \n" +
-                        "    AND post.pid = hugged.pid \n" +
-                        "    AND post.pid = belled.pid \n" +
-                        "    AND post.pid = flagged.pid\n" +
-                        "    AND post.category = %d\n" +
-                        "ORDER BY post.pid DESC\n" +
-                        "LIMIT %d, %d",
-                uid, uid, uid, category, page * 10, 10);
-        ResultSet result = getContext().getDBConnector().executeQuery(sql);
-        JSONArray posts = createPostList(result);
-        JSONObject response = new JSONObject();
-        response.put("posts", posts);
-        return response;
-    }
-
-    public JSONObject listAttentions(int uid, int page) throws SQLException {
-        String sql = String.format(
-                "SELECT \n" +
-                        "\tpost.pid, \n" +
-                        "    post.uid, \n" +
-                        "    user.username, \n" +
-                        "    post.timestamp, \n" +
-                        "    post.category, \n" +
-                        "    post.content, \n" +
-                        "    hugs.hugs, \n" +
-                        "    comments.comments, \n" +
-                        "    hugged.hugged, \n" +
-                        "    belled.belled, \n" +
-                        "    flagged.flagged\n" +
+                        "\tpost.uid, \n" +
+                        "\tuser.username, \n" +
+                        "\tpost.timestamp, \n" +
+                        "\tpost.category, \n" +
+                        "\tpost.content, \n" +
+                        "\thugs.hugs, \n" +
+                        "\tcomments.comments, \n" +
+                        "\thugged.hugged, \n" +
+                        "\tbelled.belled, \n" +
+                        "\tflagged.flagged\n" +
                         "FROM\n" +
                         "\tuser, post,\n" +
                         "\t(SELECT \n" +
@@ -301,16 +187,18 @@ public class DBManager {
                         "\tGROUP BY post.pid) AS flagged\n" +
                         "WHERE\n" +
                         "\tpost.uid = user.uid \n" +
-                        "    AND post.pid = hugs.pid \n" +
-                        "    AND post.pid = bells.pid\n" +
-                        "    AND post.pid = comments.pid \n" +
-                        "    AND post.pid = hugged.pid \n" +
-                        "    AND post.pid = belled.pid \n" +
-                        "    AND post.pid = flagged.pid\n" +
-                        "    AND bells.bells >= 2\n" +
+                        "\tAND post.pid = hugs.pid \n" +
+                        "\tAND post.pid = bells.pid\n" +
+                        "\tAND post.pid = comments.pid\n" +
+                        "\tAND post.pid = hugged.pid \n" +
+                        "\tAND post.pid = belled.pid \n" +
+                        "\tAND post.pid = flagged.pid\n" +
+                        "\t%s\n" +
+                        "\t%s\n" +
+                        "\t%s\n" +
                         "ORDER BY post.pid DESC\n" +
                         "LIMIT %d, %d",
-                uid, uid, uid, page * 10, 10);
+                uid, uid, uid, attention_replacer, category_replacer, target_replacer, page * 10, 10);
         ResultSet result = getContext().getDBConnector().executeQuery(sql);
         JSONArray posts = createPostList(result);
         JSONObject response = new JSONObject();
