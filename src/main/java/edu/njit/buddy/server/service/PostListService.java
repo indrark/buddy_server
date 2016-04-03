@@ -1,6 +1,7 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.Context;
+import edu.njit.buddy.server.RequestWrapper;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,13 +18,13 @@ public class PostListService extends Service {
     }
 
     @Override
-    public void service(JSONObject request, Response response) throws SQLException, JSONException {
-        int page = request.getInt("page");
-        int category = request.has("category") ? request.getInt("category") : -1;
-        int attention = request.has("attention") ? request.getInt("attention") : 0;
-        int target_uid = request.has("target_uid") ? request.getInt("target_uid") : 0;
+    public void service(RequestWrapper request, Response response) throws SQLException, JSONException {
+        int page = request.getBody().getInt("page");
+        int category = request.getBody().has("category") ? request.getBody().getInt("category") : -1;
+        int attention = request.getBody().has("attention") ? request.getBody().getInt("attention") : 0;
+        int target_uid = request.getBody().has("target_uid") ? request.getBody().getInt("target_uid") : 0;
         JSONObject response_content = getContext().getDBManager().listPosts(
-                getUID(), page, category, attention, target_uid);
+                request.getUID(), page, category, attention, target_uid);
         onSuccess(response, response_content);
     }
 

@@ -1,6 +1,7 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.Context;
+import edu.njit.buddy.server.RequestWrapper;
 import edu.njit.buddy.server.ResponseCode;
 import edu.njit.buddy.server.ServerException;
 import edu.njit.buddy.server.util.EmailValidator;
@@ -22,10 +23,10 @@ public class RegisterService extends Service {
     }
 
     @Override
-    public void service(JSONObject request, Response response) throws ServerException, SQLException, JSONException {
-        String email = request.getString("email");
-        String username = request.getString("username");
-        String password = request.getString("password");
+    public void service(RequestWrapper request, Response response) throws ServerException, SQLException, JSONException {
+        String email = request.getBody().getString("email");
+        String username = request.getBody().getString("username");
+        String password = request.getBody().getString("password");
         if (EmailValidator.isValidEmail(email)) {
             if (PasswordValidator.isValidPassword(password)) {
                 if (getContext().getDBManager().isEmailAvailable(email)) {

@@ -1,6 +1,7 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.Context;
+import edu.njit.buddy.server.RequestWrapper;
 import edu.njit.buddy.server.ResponseCode;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
@@ -18,11 +19,11 @@ public class PostCreateService extends Service {
     }
 
     @Override
-    public void service(JSONObject request, Response response) throws SQLException, JSONException {
-        int category = request.getInt("category");
-        String content = request.getString("content");
+    public void service(RequestWrapper request, Response response) throws SQLException, JSONException {
+        int category = request.getBody().getInt("category");
+        String content = request.getBody().getString("content");
         if (content.length() <= 128) {
-            getContext().getDBManager().post(getUID(), category, content);
+            getContext().getDBManager().post(request.getUID(), category, content);
             onSuccess(response);
         } else {
             onFail(response, ResponseCode.CONTENT_TOO_LONG);

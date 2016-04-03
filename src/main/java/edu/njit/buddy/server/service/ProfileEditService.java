@@ -1,6 +1,7 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.Context;
+import edu.njit.buddy.server.RequestWrapper;
 import edu.njit.buddy.server.ServerException;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
@@ -18,20 +19,20 @@ public class ProfileEditService extends Service {
     }
 
     @Override
-    public void service(JSONObject request, Response response) throws ServerException, SQLException, JSONException {
-        String username = request.getString("username");
-        String description = request.getString("description");
-        int description_open = request.getInt("description_open");
-        String birthday = request.getString("birthday");
-        int birthday_open = request.getInt("birthday_open");
-        String gender = request.getString("gender");
-        int gender_open = request.getInt("gender_open");
-        String sexuality = request.getString("sexuality");
-        int sexuality_open = request.getInt("sexuality_open");
-        String race = request.getString("race");
-        int race_open = request.getInt("race_open");
+    public void service(RequestWrapper request, Response response) throws ServerException, SQLException, JSONException {
+        String username = request.getBody().getString("username");
+        String description = request.getBody().getString("description");
+        int description_open = request.getBody().getInt("description_open");
+        String birthday = request.getBody().getString("birthday");
+        int birthday_open = request.getBody().getInt("birthday_open");
+        String gender = request.getBody().getString("gender");
+        int gender_open = request.getBody().getInt("gender_open");
+        String sexuality = request.getBody().getString("sexuality");
+        int sexuality_open = request.getBody().getInt("sexuality_open");
+        String race = request.getBody().getString("race");
+        int race_open = request.getBody().getInt("race_open");
         getContext().getDBManager().profileEdit(
-                getUID(),
+                request.getUID(),
                 username,
                 description, description_open,
                 birthday, birthday_open,

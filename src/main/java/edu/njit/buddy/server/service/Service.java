@@ -1,6 +1,7 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.Context;
+import edu.njit.buddy.server.RequestWrapper;
 import edu.njit.buddy.server.ResponseCode;
 import edu.njit.buddy.server.ServerException;
 import org.glassfish.grizzly.http.server.HttpHandler;
@@ -24,8 +25,6 @@ public abstract class Service extends HttpHandler {
 
     private final boolean need_authorization;
 
-    private int uid;
-
     public Service(Context context, boolean need_authorization) {
         super();
         this.context = context;
@@ -40,6 +39,7 @@ public abstract class Service extends HttpHandler {
     public void service(Request request, Response response) {
         try {
             if (request.getMethod().getMethodString().equals("POST")) {
+                int uid = 0;
                 if (need_authorization) {
                     String authorization = request.getAuthorization();
                     uid = getContext().getDBManager().getUID(authorization);
@@ -52,7 +52,8 @@ public abstract class Service extends HttpHandler {
                     content.append(line).append("\n");
                 }
                 br.close();
-                service(new JSONObject(content.toString()), response);
+                RequestWrapper request_wrapper = new RequestWrapper(uid, new JSONObject(content.toString()));
+                service(request_wrapper, response);
             } else {
                 response.getWriter().write("ERROR: Only [POST] method is allowed.");
             }
@@ -66,12 +67,8 @@ public abstract class Service extends HttpHandler {
         }
     }
 
-    abstract public void service(JSONObject request, Response response)
+    abstract public void service(RequestWrapper request, Response response)
             throws ServerException, SQLException, JSONException;
-
-    protected int getUID() {
-        return uid;
-    }
 
     protected void onSuccess(Response response) {
         onSuccess(response, new JSONObject());

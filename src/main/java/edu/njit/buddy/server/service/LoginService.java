@@ -1,6 +1,7 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.Context;
+import edu.njit.buddy.server.RequestWrapper;
 import edu.njit.buddy.server.ResponseCode;
 import edu.njit.buddy.server.ServerException;
 import edu.njit.buddy.server.util.Encoder;
@@ -20,9 +21,9 @@ public class LoginService extends Service {
     }
 
     @Override
-    public void service(JSONObject request, Response response) throws ServerException, SQLException, JSONException {
-        String email = request.getString("email");
-        String password = request.getString("password");
+    public void service(RequestWrapper request, Response response) throws ServerException, SQLException, JSONException {
+        String email = request.getBody().getString("email");
+        String password = request.getBody().getString("password");
         JSONObject response_content =
                 getContext().getDBManager().login(email, Encoder.encode(password));
         if (response_content.has("authorization")) {
