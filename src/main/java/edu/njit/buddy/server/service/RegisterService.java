@@ -30,9 +30,7 @@ public class RegisterService extends Service {
         if (EmailValidator.isValidEmail(email)) {
             if (PasswordValidator.isValidPassword(password)) {
                 if (getContext().getDBManager().isEmailAvailable(email)) {
-                    String encoded_password = Encoder.encode(password);
-                    int test_group = getContext().getNextTestGroup();
-                    getContext().getDBManager().register(email, username, encoded_password, test_group);
+                    getContext().getDBManager().register(email, username, password);
 
                     onSuccess(response);
                 } else {

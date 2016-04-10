@@ -16,6 +16,8 @@ public interface Context {
 
     DBManager getDBManager();
 
+    PasswordManager getPasswordManager();
+
     DBConnector getDBConnector();
 
     int getNextTestGroup();

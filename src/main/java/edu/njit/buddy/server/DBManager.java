@@ -61,28 +61,45 @@ public class DBManager {
         }
     }
 
-    public void register(String email, String username, String password, int test_group) throws SQLException {
+    public void register(String email, String username, String password) throws ServerException, SQLException {
         String sql = String.format(
                 "INSERT INTO user (email, username, password, test_group) VALUES ('%s', '%s', '%s', %d)",
-                email, username, password, test_group);
+                email, username, Encoder.encode(password), getContext().getNextTestGroup());
         getContext().getDBConnector().executeUpdate(sql);
     }
 
     public JSONObject login(String email, String password) throws ServerException, SQLException {
         JSONObject response = new JSONObject();
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format("SELECT uid FROM user WHERE email = '%s' AND password = '%s'", email, password));
+        ResultSet result = getContext().getDBConnector().executeQuery(String.format(
+                "SELECT uid FROM user WHERE email = '%s' AND password = '%s'", email, Encoder.encode(password)));
         if (result.next()) {
             int uid = result.getInt("uid");
-            String authorization = Encoder.encode(email + System.currentTimeMillis());
-            getContext().getDBConnector().executeUpdate(
-                    String.format("UPDATE user SET authorization = '%s' WHERE uid = '%d'", authorization, uid));
+            String authorization = Encoder.encode(email + password + System.currentTimeMillis());
+            getContext().getDBConnector().executeUpdate(String.format(
+                    "UPDATE user SET authorization = '%s' WHERE uid = '%d'", authorization, uid));
             response.put("uid", uid);
             response.put("authorization", authorization);
             return response;
         } else {
-            return response;
+            throw new PasswordMismatchException(String.format("Password mismatch for email [%s]", email));
         }
+    }
+
+    public void changePassword(int uid, String old_password, String new_password)
+            throws ServerException, SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(String.format(
+                "SELECT uid FROM user WHERE uid = '%d' AND password = '%s'", uid, Encoder.encode(old_password)));
+        if (result.next()) {
+            getContext().getDBConnector().executeUpdate(String.format(
+                    "UPDATE user SET password = '%s' WHERE uid = '%d'", Encoder.encode(new_password), uid));
+        } else {
+            throw new PasswordMismatchException(String.format("Password mismatch for uid [%d]", uid));
+        }
+    }
+
+    public void setPassword(int uid, String password) throws ServerException, SQLException {
+        getContext().getDBConnector().executeUpdate(String.format(
+                "UPDATE user SET password = '%s' WHERE uid = '%d'", Encoder.encode(password), uid));
     }
 
     public void post(int uid, int category, String content) throws SQLException {

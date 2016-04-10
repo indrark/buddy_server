@@ -26,6 +26,8 @@ public class BuddyServer implements Context {
 
     private DBManager db_manager;
 
+    private PasswordManager password_manager;
+
     private HugBot hug_bot;
 
     private int current_test_group;
@@ -46,6 +48,7 @@ public class BuddyServer implements Context {
         getDBConnector().connect(database_host, database_name, database_timezone, database_username, database_password);
 
         this.db_manager = new DBManager(this);
+        this.password_manager = new PasswordManager(this);
         this.current_test_group = getDBManager().getCurrentTestGroup();
 
         try {
@@ -71,6 +74,7 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new CommentListService(this), "/comment/list");
         getHttpServer().getServerConfiguration().addHttpHandler(new ProfileViewService(this), "/profile/view");
         getHttpServer().getServerConfiguration().addHttpHandler(new ProfileEditService(this), "/profile/edit");
+        getHttpServer().getServerConfiguration().addHttpHandler(new PasswordChangeService(this), "/password/change");
         getHttpServer().getServerConfiguration().addHttpHandler(new RecordService(this), "/record");
     }
 
@@ -105,6 +109,11 @@ public class BuddyServer implements Context {
     }
 
     @Override
+    public PasswordManager getPasswordManager() {
+        return password_manager;
+    }
+
+    @Override
     public DBConnector getDBConnector() {
         return db_connector;
     }
@@ -115,7 +124,7 @@ public class BuddyServer implements Context {
     }
 
     public static void main(String[] args) {
-        Runnable server_runner = new Runnable() {
+        Runnable server_launcher = new Runnable() {
             @Override
             public void run() {
                 try {
@@ -131,7 +140,7 @@ public class BuddyServer implements Context {
                 }
             }
         };
-        new Thread(server_runner, "server-launch-thread").start();
+        new Thread(server_launcher, "server-launch-thread").start();
     }
 
 }
