@@ -1,15 +1,10 @@
 package edu.njit.buddy.server.service;
 
-import edu.njit.buddy.server.Context;
-import edu.njit.buddy.server.RequestWrapper;
-import edu.njit.buddy.server.ResponseCode;
-import edu.njit.buddy.server.ServerException;
+import edu.njit.buddy.server.*;
 import edu.njit.buddy.server.util.EmailValidator;
-import edu.njit.buddy.server.util.Encoder;
 import edu.njit.buddy.server.util.PasswordValidator;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.sql.SQLException;
 
@@ -27,20 +22,28 @@ public class RegisterService extends Service {
         String email = request.getBody().getString("email");
         String username = request.getBody().getString("username");
         String password = request.getBody().getString("password");
-        if (EmailValidator.isValidEmail(email)) {
-            if (PasswordValidator.isValidPassword(password)) {
-                if (getContext().getDBManager().isEmailAvailable(email)) {
-                    getContext().getDBManager().register(email, username, password);
-
-                    onSuccess(response);
+        String verification = request.getBody().getString("verification");
+        try {
+            if (EmailValidator.validate(email)) {
+                if (PasswordValidator.isValidPassword(password)) {
+                    if (getContext().getDBManager().isEmailAvailable(email)) {
+                        if (getContext().getTokenManager().checkVerification(email, verification)) {
+                            getContext().getDBManager().register(email, username, password);
+                            onSuccess(response);
+                        } else {
+                            onFail(response, ResponseCode.VERIFICATION_CODE_ERROR);
+                        }
+                    } else {
+                        onFail(response, ResponseCode.EMAIL_NOT_AVAILABLE);
+                    }
                 } else {
-                    onFail(response, ResponseCode.EMAIL_NOT_AVAILABLE);
+                    onFail(response, ResponseCode.PASSWORD_NOT_VALID);
                 }
             } else {
-                onFail(response, ResponseCode.PASSWORD_NOT_VALID);
+                onFail(response, ResponseCode.EMAIL_NOT_VALID);
             }
-        } else {
-            onFail(response, ResponseCode.EMAIL_NOT_VALID);
+        } catch (TokenExpiredException ex) {
+            onFail(response, ResponseCode.VERIFICATION_CODE_EXPIRED);
         }
     }
 

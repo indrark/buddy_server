@@ -8,6 +8,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,9 +28,15 @@ public class BuddyServer implements Context {
 
     private DBManager db_manager;
 
-    private PasswordManager password_manager;
+    private MailSender mail_sender;
+
+    private TokenManager token_manager;
 
     private HugBot hug_bot;
+
+    private Timer timer;
+
+    private long CLEAN_RATE;
 
     private int current_test_group;
 
@@ -48,7 +56,17 @@ public class BuddyServer implements Context {
         getDBConnector().connect(database_host, database_name, database_timezone, database_username, database_password);
 
         this.db_manager = new DBManager(this);
-        this.password_manager = new PasswordManager(this);
+
+        String GMAIL_USERNAME = properties.getProperty("GMAIL_USERNAME", "buddy");
+        String GMAIL_PASSWORD = properties.getProperty("GMAIL_PASSWORD", "password");
+        this.mail_sender = new MailSender(GMAIL_USERNAME, GMAIL_PASSWORD);
+
+        this.CLEAN_RATE = Long.parseLong(properties.getProperty("CLEAN_RATE", "21600000"));
+
+        long VERIFICATION_VALIDITY = Long.parseLong(properties.getProperty("VERIFICATION_VALIDITY", "3600000"));
+        long RECOVERY_VALIDITY = Long.parseLong(properties.getProperty("RECOVERY_VALIDITY", "1800000"));
+        this.token_manager = new TokenManager(VERIFICATION_VALIDITY, RECOVERY_VALIDITY);
+
         this.current_test_group = getDBManager().getCurrentTestGroup();
 
         try {
@@ -61,6 +79,8 @@ public class BuddyServer implements Context {
         } catch (NumberFormatException ex) {
             throw new ServerException("Hug bot uid is not specified correctly", ex);
         }
+
+        this.timer = new Timer();
 
         getHttpServer().getServerConfiguration().addHttpHandler(new RegisterService(this), "/register");
         getHttpServer().getServerConfiguration().addHttpHandler(new LoginService(this), "/login");
@@ -75,22 +95,37 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new ProfileViewService(this), "/profile/view");
         getHttpServer().getServerConfiguration().addHttpHandler(new ProfileEditService(this), "/profile/edit");
         getHttpServer().getServerConfiguration().addHttpHandler(new PasswordChangeService(this), "/password/change");
+        getHttpServer().getServerConfiguration().addHttpHandler(new MailVerificationService(this), "/verification");
         getHttpServer().getServerConfiguration().addHttpHandler(new RecordService(this), "/record");
     }
 
     private Properties loadConfiguration() throws IOException {
         File configure_file = new File("server.conf");
+        FileInputStream fis = new FileInputStream(configure_file);
         Properties properties = new Properties();
-        properties.load(new FileInputStream(configure_file));
+        properties.load(fis);
         return properties;
     }
 
     public void start() throws IOException, InterruptedException {
         server.start();
         hug_bot.start();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                getMailSender().clean();
+                getTokenManager().clean();
+            }
+        }, CLEAN_RATE, CLEAN_RATE);
         synchronized (SERVER_LOCK) {
             SERVER_LOCK.wait();
+            stop();
         }
+    }
+
+    public void stop() {
+        hug_bot.stop();
+        mail_sender.stop();
     }
 
     @Override
@@ -109,8 +144,13 @@ public class BuddyServer implements Context {
     }
 
     @Override
-    public PasswordManager getPasswordManager() {
-        return password_manager;
+    public MailSender getMailSender() {
+        return mail_sender;
+    }
+
+    @Override
+    public TokenManager getTokenManager() {
+        return token_manager;
     }
 
     @Override

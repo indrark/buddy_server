@@ -58,6 +58,12 @@ public class HugBot {
         }
     }
 
+    public void stop() {
+        bot_timer.cancel();
+        male_timer.cancel();
+        female_timer.cancel();
+    }
+
     private void serviceBot() throws SQLException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 String.format("SELECT\n" +

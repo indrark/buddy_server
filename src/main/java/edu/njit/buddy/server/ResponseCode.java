@@ -23,7 +23,13 @@ public class ResponseCode {
 
     public static final int CONTENT_TOO_LONG = 7;
 
+    public static final int VERIFICATION_CODE_ERROR = 8;
+
+    public static final int VERIFICATION_CODE_EXPIRED = 9;
+
     public static final int LOGIN_REQUIRED = 100;
+
+    public static final int MAIL_SENDING_TOO_FREQUENT = 101;
 
     public static final int REQUEST_NOT_SUPPORTED = 200;
 
