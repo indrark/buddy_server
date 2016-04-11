@@ -11,9 +11,11 @@ public class DBConnector {
 
     public void connect(String host, String name, String timezone, String username, String password)
             throws SQLException {
-        connection = DriverManager.getConnection(
-                String.format("jdbc:mysql://%s/%s?user=%s&password=%s", host, name, username, password));
+        connection = DriverManager.getConnection(String.format(
+                "jdbc:mysql://%s/%s?user=%s&password=%s&useUnicode=true&characterEncoding=UTF-8",
+                host, name, username, password));
         executeUpdate(String.format("SET time_zone = \"%s\"", timezone));
+        executeUpdate("SET NAMES 'utf8mb4'");
     }
 
     public Connection getConnection() {

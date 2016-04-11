@@ -5,7 +5,6 @@ import edu.njit.buddy.server.RequestWrapper;
 import edu.njit.buddy.server.ServerException;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.sql.SQLException;
 
