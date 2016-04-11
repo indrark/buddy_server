@@ -1,5 +1,8 @@
 package edu.njit.buddy.server;
 
+import static edu.njit.buddy.server.util.Encoder.*;
+import static edu.njit.buddy.server.util.StringUtil.*;
+
 import edu.njit.buddy.server.service.NotAuthorizedException;
 import edu.njit.buddy.server.service.UserNotFoundException;
 import edu.njit.buddy.server.util.Encoder;
@@ -27,7 +30,7 @@ public class DBManager {
 
     public boolean isEmailAvailable(String email) throws SQLException {
         ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format("SELECT count(email) FROM user WHERE email = '%s'", email));
+                String.format("SELECT count(email) FROM user WHERE email = '%s'", escape(email)));
         result.next();
         return result.getInt(1) == 0;
     }
@@ -64,14 +67,14 @@ public class DBManager {
     public void register(String email, String username, String password) throws ServerException, SQLException {
         String sql = String.format(
                 "INSERT INTO user (email, username, password, test_group) VALUES ('%s', '%s', '%s', %d)",
-                email, username, Encoder.encode(password), getContext().getNextTestGroup());
+                escape(email), escape(username), encode(password), getContext().getNextTestGroup());
         getContext().getDBConnector().executeUpdate(sql);
     }
 
     public JSONObject login(String email, String password) throws ServerException, SQLException {
         JSONObject response = new JSONObject();
         ResultSet result = getContext().getDBConnector().executeQuery(String.format(
-                "SELECT uid FROM user WHERE email = '%s' AND password = '%s'", email, Encoder.encode(password)));
+                "SELECT uid FROM user WHERE email = '%s' AND password = '%s'", escape(email), encode(password)));
         if (result.next()) {
             int uid = result.getInt("uid");
             String authorization = Encoder.encode(email + password + System.currentTimeMillis());
@@ -88,10 +91,10 @@ public class DBManager {
     public void changePassword(int uid, String old_password, String new_password)
             throws ServerException, SQLException {
         ResultSet result = getContext().getDBConnector().executeQuery(String.format(
-                "SELECT uid FROM user WHERE uid = '%d' AND password = '%s'", uid, Encoder.encode(old_password)));
+                "SELECT uid FROM user WHERE uid = '%d' AND password = '%s'", uid, encode(old_password)));
         if (result.next()) {
             getContext().getDBConnector().executeUpdate(String.format(
-                    "UPDATE user SET password = '%s' WHERE uid = '%d'", Encoder.encode(new_password), uid));
+                    "UPDATE user SET password = '%s' WHERE uid = '%d'", encode(new_password), uid));
         } else {
             throw new PasswordMismatchException(String.format("Password mismatch for uid [%d]", uid));
         }
@@ -104,7 +107,7 @@ public class DBManager {
 
     public void post(int uid, int category, String content) throws SQLException {
         String sql = String.format(
-                "INSERT INTO post (uid, category, content) VALUES (%d, %d, '%s')", uid, category, content);
+                "INSERT INTO post (uid, category, content) VALUES (%d, %d, '%s')", uid, category, escape(content));
         getContext().getDBConnector().executeUpdate(sql);
     }
 
@@ -149,7 +152,8 @@ public class DBManager {
 
     public void comment(int uid, int pid, String content) throws SQLException {
         String sql = String.format(
-                "INSERT INTO comment (uid, pid, content, timestamp) VALUES (%d, %d, '%s', now())", uid, pid, content);
+                "INSERT INTO comment (uid, pid, content, timestamp) VALUES (%d, %d, '%s', now())",
+                uid, pid, escape(content));
         getContext().getDBConnector().executeUpdate(sql);
     }
 
@@ -378,8 +382,8 @@ public class DBManager {
                         "    race_open = %d\n" +
                         "WHERE\n" +
                         "\tuid = %d",
-                username,
-                description, description_open,
+                escape(username),
+                escape(description), description_open,
                 birthday, birthday_open,
                 gender, gender_open,
                 sexuality, sexuality_open,
