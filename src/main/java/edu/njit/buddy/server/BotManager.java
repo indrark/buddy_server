@@ -9,7 +9,7 @@ import java.util.logging.Level;
 /**
  * @author toyknight 3/4/2016.
  */
-public class HugBot {
+public class BotManager {
 
     private final Context context;
 
@@ -23,7 +23,7 @@ public class HugBot {
     private final Timer male_timer;
     private final Timer female_timer;
 
-    public HugBot(Context context, boolean enabled, int bot_uid, int male_uid, int female_uid) {
+    public BotManager(Context context, boolean enabled, int bot_uid, int male_uid, int female_uid) {
         this.context = context;
         this.enabled = enabled;
         this.bot_uid = bot_uid;

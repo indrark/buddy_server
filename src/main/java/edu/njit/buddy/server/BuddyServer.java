@@ -32,7 +32,7 @@ public class BuddyServer implements Context {
 
     private TokenManager token_manager;
 
-    private HugBot hug_bot;
+    private BotManager bot_manager;
 
     private Timer timer;
 
@@ -75,7 +75,7 @@ public class BuddyServer implements Context {
             int bot_uid = Integer.parseInt(properties.getProperty("HUGBOT_BOT_UID", "NULL"));
             int male_uid = Integer.parseInt(properties.getProperty("HUGBOT_MALE_UID", "NULL"));
             int female_uid = Integer.parseInt(properties.getProperty("HUGBOT_FEMALE_UID", "NULL"));
-            this.hug_bot = new HugBot(this, bot_enabled, bot_uid, male_uid, female_uid);
+            this.bot_manager = new BotManager(this, bot_enabled, bot_uid, male_uid, female_uid);
         } catch (NumberFormatException ex) {
             throw new ServerException("Hug bot uid is not specified correctly", ex);
         }
@@ -109,7 +109,7 @@ public class BuddyServer implements Context {
 
     public void start() throws IOException, InterruptedException {
         server.start();
-        hug_bot.start();
+        bot_manager.start();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -124,7 +124,7 @@ public class BuddyServer implements Context {
     }
 
     public void stop() {
-        hug_bot.stop();
+        bot_manager.stop();
         mail_sender.stop();
     }
 
