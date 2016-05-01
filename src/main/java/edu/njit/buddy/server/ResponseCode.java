@@ -17,15 +17,19 @@ public class ResponseCode {
 
     public static final int PASSWORD_NOT_VALID = 4;
 
-    public static final int PASSWORD_OR_EMAIL_MISS_MATCH = 5;
+    public static final int PASSWORD_MISMATCH = 5;
 
     public static final int USER_NOT_FOUND = 6;
 
     public static final int CONTENT_TOO_LONG = 7;
 
-    public static final int VERIFICATION_CODE_ERROR = 8;
+    public static final int VERIFICATION_CODE_MISMATCH = 8;
 
     public static final int VERIFICATION_CODE_EXPIRED = 9;
+
+    public static final int POST_NOT_FOUND = 10;
+
+    public static final int NEGATIVE_PAGE_NUMBER = 11;
 
     public static final int LOGIN_REQUIRED = 100;
 

@@ -26,7 +26,7 @@ public class PasswordChangeService extends Service {
                 getContext().getDBManager().changePassword(request.getUID(), old_password, new_password);
                 onSuccess(response);
             } catch (PasswordMismatchException ex) {
-                onFail(response, ResponseCode.PASSWORD_OR_EMAIL_MISS_MATCH);
+                onFail(response, ResponseCode.PASSWORD_MISMATCH);
                 //TODO: record this password change failure.
             }
         } else {

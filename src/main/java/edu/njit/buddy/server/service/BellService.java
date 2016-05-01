@@ -1,10 +1,8 @@
 package edu.njit.buddy.server.service;
 
-import edu.njit.buddy.server.Context;
-import edu.njit.buddy.server.RequestWrapper;
+import edu.njit.buddy.server.*;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.sql.SQLException;
 
@@ -18,10 +16,14 @@ public class BellService extends Service {
     }
 
     @Override
-    public void service(RequestWrapper request, Response response) throws SQLException, JSONException {
+    public void service(RequestWrapper request, Response response) throws ServerException, SQLException, JSONException {
         int pid = request.getBody().getInt("pid");
-        getContext().getDBManager().bell(request.getUID(), pid);
-        onSuccess(response);
+        try {
+            getContext().getDBManager().bell(request.getUID(), pid);
+            onSuccess(response);
+        } catch (PostNotFoundException ex) {
+            onFail(response, ResponseCode.POST_NOT_FOUND);
+        }
     }
 
 }

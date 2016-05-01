@@ -31,7 +31,7 @@ public class RegisterService extends Service {
                             getContext().getDBManager().register(email, username, password);
                             onSuccess(response);
                         } else {
-                            onFail(response, ResponseCode.VERIFICATION_CODE_ERROR);
+                            onFail(response, ResponseCode.VERIFICATION_CODE_MISMATCH);
                         }
                     } else {
                         onFail(response, ResponseCode.EMAIL_NOT_AVAILABLE);

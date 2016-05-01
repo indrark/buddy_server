@@ -2,6 +2,7 @@ package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.Context;
 import edu.njit.buddy.server.RequestWrapper;
+import edu.njit.buddy.server.ResponseCode;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,9 +24,13 @@ public class PostListService extends Service {
         int category = request.getBody().has("category") ? request.getBody().getInt("category") : -1;
         int attention = request.getBody().has("attention") ? request.getBody().getInt("attention") : 0;
         int target_uid = request.getBody().has("target_uid") ? request.getBody().getInt("target_uid") : 0;
-        JSONObject response_content = getContext().getDBManager().listPosts(
-                request.getUID(), page, category, attention, target_uid);
-        onSuccess(response, response_content);
+        if (page >= 0) {
+            JSONObject response_content = getContext().getDBManager().listPosts(
+                    request.getUID(), page, category, attention, target_uid);
+            onSuccess(response, response_content);
+        } else {
+            onFail(response, ResponseCode.NEGATIVE_PAGE_NUMBER);
+        }
     }
 
 }

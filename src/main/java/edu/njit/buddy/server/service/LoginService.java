@@ -1,7 +1,6 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.*;
-import edu.njit.buddy.server.util.Encoder;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,7 +24,7 @@ public class LoginService extends Service {
             JSONObject response_content = getContext().getDBManager().login(email, password);
             onSuccess(response, response_content);
         } catch (PasswordMismatchException ex) {
-            onFail(response, ResponseCode.PASSWORD_OR_EMAIL_MISS_MATCH);
+            onFail(response, ResponseCode.PASSWORD_MISMATCH);
             //TODO: record this login failure.
         }
     }

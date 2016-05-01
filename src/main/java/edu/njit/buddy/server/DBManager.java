@@ -35,6 +35,12 @@ public class DBManager {
         return result.getInt(1) == 0;
     }
 
+    public boolean isExistingPost(int pid) throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                String.format("SELECT pid FROM post WHERE pid = %d", pid));
+        return result.next();
+    }
+
     public int getCurrentTestGroup() throws SQLException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 "SELECT\n" +
@@ -111,50 +117,66 @@ public class DBManager {
         getContext().getDBConnector().executeUpdate(sql);
     }
 
-    public void flag(int uid, int pid) throws SQLException {
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format("SELECT fid FROM flag WHERE uid = %d AND pid = %d", uid, pid));
-        if (result.next()) {
-            int fid = result.getInt("fid");
-            getContext().getDBConnector().executeUpdate(
-                    String.format("DELETE FROM flag WHERE fid = %d", fid));
+    public void flag(int uid, int pid) throws SQLException, ServerException {
+        if (isExistingPost(pid)) {
+            ResultSet result = getContext().getDBConnector().executeQuery(
+                    String.format("SELECT fid FROM flag WHERE uid = %d AND pid = %d", uid, pid));
+            if (result.next()) {
+                int fid = result.getInt("fid");
+                getContext().getDBConnector().executeUpdate(
+                        String.format("DELETE FROM flag WHERE fid = %d", fid));
+            } else {
+                getContext().getDBConnector().executeUpdate(
+                        String.format("INSERT INTO flag (uid, pid) VALUES (%d, %d)", uid, pid));
+            }
         } else {
-            getContext().getDBConnector().executeUpdate(
-                    String.format("INSERT INTO flag (uid, pid) VALUES (%d, %d)", uid, pid));
+            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
         }
     }
 
-    public void bell(int uid, int pid) throws SQLException {
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format("SELECT bid FROM bell WHERE uid = %d AND pid = %d", uid, pid));
-        if (result.next()) {
-            int bid = result.getInt("bid");
-            getContext().getDBConnector().executeUpdate(
-                    String.format("DELETE FROM bell WHERE bid = %d", bid));
+    public void bell(int uid, int pid) throws SQLException, ServerException {
+        if (isExistingPost(pid)) {
+            ResultSet result = getContext().getDBConnector().executeQuery(
+                    String.format("SELECT bid FROM bell WHERE uid = %d AND pid = %d", uid, pid));
+            if (result.next()) {
+                int bid = result.getInt("bid");
+                getContext().getDBConnector().executeUpdate(
+                        String.format("DELETE FROM bell WHERE bid = %d", bid));
+            } else {
+                getContext().getDBConnector().executeUpdate(
+                        String.format("INSERT INTO bell (uid, pid) VALUES (%d, %d)", uid, pid));
+            }
         } else {
-            getContext().getDBConnector().executeUpdate(
-                    String.format("INSERT INTO bell (uid, pid) VALUES (%d, %d)", uid, pid));
+            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
         }
     }
 
-    public void hug(int uid, int pid) throws SQLException {
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format("SELECT hid FROM hug WHERE uid = %d AND pid = %d", uid, pid));
-        if (result.next()) {
-            int hid = result.getInt("hid");
-            getContext().getDBConnector().executeUpdate(
-                    String.format("DELETE FROM hug WHERE hid = %d", hid));
+    public void hug(int uid, int pid) throws SQLException, ServerException {
+        if (isExistingPost(pid)) {
+            ResultSet result = getContext().getDBConnector().executeQuery(
+                    String.format("SELECT hid FROM hug WHERE uid = %d AND pid = %d", uid, pid));
+            if (result.next()) {
+                int hid = result.getInt("hid");
+                getContext().getDBConnector().executeUpdate(
+                        String.format("DELETE FROM hug WHERE hid = %d", hid));
+            } else {
+                getContext().getDBConnector().executeUpdate(
+                        String.format("INSERT INTO hug (uid, pid) VALUES (%d, %d)", uid, pid));
+            }
         } else {
-            getContext().getDBConnector().executeUpdate(
-                    String.format("INSERT INTO hug (uid, pid) VALUES (%d, %d)", uid, pid));
+            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
         }
     }
 
-    public void comment(int uid, int pid, String content) throws SQLException {
-        String sql = String.format(
-                "INSERT INTO comment (uid, pid, content, timestamp) VALUES (%d, %d, '%s', now())",
-                uid, pid, escape(content));
-        getContext().getDBConnector().executeUpdate(sql);
+    public void comment(int uid, int pid, String content) throws SQLException, ServerException {
+        if (isExistingPost(pid)) {
+            String sql = String.format(
+                    "INSERT INTO comment (uid, pid, content, timestamp) VALUES (%d, %d, '%s', now())",
+                    uid, pid, escape(content));
+            getContext().getDBConnector().executeUpdate(sql);
+        } else {
+            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+        }
     }
 
     public JSONObject listPosts(int uid, int page, int category, int attention, int target_uid) throws SQLException {
@@ -247,22 +269,26 @@ public class DBManager {
         return posts;
     }
 
-    public JSONObject listHugs(int pid, int page) throws SQLException, JSONException {
-        String sql = String.format(
-                "SELECT\n" +
-                        "\tuser.uid, user.username\n" +
-                        "FROM\n" +
-                        "\tuser, hug\n" +
-                        "WHERE\n" +
-                        "\tuser.uid = hug.uid AND hug.pid = %d\n" +
-                        "ORDER BY timestamp DESC\n" +
-                        "LIMIT %d, %d",
-                pid, page * 10, 10);
-        ResultSet result = getContext().getDBConnector().executeQuery(sql);
-        JSONArray hugs = createHugList(result);
-        JSONObject response = new JSONObject();
-        response.put("hugs", hugs);
-        return response;
+    public JSONObject listHugs(int pid, int page) throws SQLException, ServerException, JSONException {
+        if (isExistingPost(pid)) {
+            String sql = String.format(
+                    "SELECT\n" +
+                            "\tuser.uid, user.username\n" +
+                            "FROM\n" +
+                            "\tuser, hug\n" +
+                            "WHERE\n" +
+                            "\tuser.uid = hug.uid AND hug.pid = %d\n" +
+                            "ORDER BY timestamp DESC\n" +
+                            "LIMIT %d, %d",
+                    pid, page * 10, 10);
+            ResultSet result = getContext().getDBConnector().executeQuery(sql);
+            JSONArray hugs = createHugList(result);
+            JSONObject response = new JSONObject();
+            response.put("hugs", hugs);
+            return response;
+        } else {
+            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+        }
     }
 
     public JSONArray createHugList(ResultSet result) throws SQLException, JSONException {
@@ -276,24 +302,28 @@ public class DBManager {
         return hugs;
     }
 
-    public JSONObject listComments(int pid, int page) throws SQLException, JSONException {
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format(
-                        "SELECT\n" +
-                                "\tuser.uid,\n" +
-                                "\tusername,\n" +
-                                "\ttimestamp,\n" +
-                                "\tcontent\n" +
-                                "FROM\n" +
-                                "\tuser, comment\n" +
-                                "WHERE\n" +
-                                "\tuser.uid = comment.uid AND comment.pid = %d\n" +
-                                "ORDER BY timestamp DESC\n" +
-                                "LIMIT %d, %d", pid, page * 10, 10));
-        JSONArray comments = createCommentList(result);
-        JSONObject response = new JSONObject();
-        response.put("comments", comments);
-        return response;
+    public JSONObject listComments(int pid, int page) throws SQLException, ServerException, JSONException {
+        if (isExistingPost(pid)) {
+            ResultSet result = getContext().getDBConnector().executeQuery(
+                    String.format(
+                            "SELECT\n" +
+                                    "\tuser.uid,\n" +
+                                    "\tusername,\n" +
+                                    "\ttimestamp,\n" +
+                                    "\tcontent\n" +
+                                    "FROM\n" +
+                                    "\tuser, comment\n" +
+                                    "WHERE\n" +
+                                    "\tuser.uid = comment.uid AND comment.pid = %d\n" +
+                                    "ORDER BY timestamp DESC\n" +
+                                    "LIMIT %d, %d", pid, page * 10, 10));
+            JSONArray comments = createCommentList(result);
+            JSONObject response = new JSONObject();
+            response.put("comments", comments);
+            return response;
+        } else {
+            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+        }
     }
 
     private JSONArray createCommentList(ResultSet result) throws SQLException, JSONException {
