@@ -31,6 +31,8 @@ public class ResponseCode {
 
     public static final int NEGATIVE_PAGE_NUMBER = 11;
 
+    public static final int MOOD_TODAY_EXISTS = 12;
+
     public static final int LOGIN_REQUIRED = 100;
 
     public static final int MAIL_SENDING_TOO_FREQUENT = 101;

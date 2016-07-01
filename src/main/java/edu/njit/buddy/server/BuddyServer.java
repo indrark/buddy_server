@@ -96,6 +96,8 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new ProfileEditService(this), "/profile/edit");
         getHttpServer().getServerConfiguration().addHttpHandler(new PasswordChangeService(this), "/password/change");
         getHttpServer().getServerConfiguration().addHttpHandler(new MailVerificationService(this), "/verification");
+        getHttpServer().getServerConfiguration().addHttpHandler(new MoodSubmitService(this), "/mood/submit");
+        getHttpServer().getServerConfiguration().addHttpHandler(new MoodListService(this), "/mood/list");
         getHttpServer().getServerConfiguration().addHttpHandler(new RecordService(this), "/record");
     }
 

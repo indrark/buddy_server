@@ -64,7 +64,7 @@ public class BotManager {
         female_timer.cancel();
     }
 
-    private void serviceBot() throws SQLException {
+    private void serviceBot() throws SQLException, ServerException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 String.format("SELECT\n" +
                         "\tpost.pid\n" +
@@ -84,7 +84,7 @@ public class BotManager {
         }
     }
 
-    private void serviceMale() throws SQLException {
+    private void serviceMale() throws SQLException, ServerException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 String.format("SELECT\n" +
                         "\tpost.pid\n" +
@@ -104,7 +104,7 @@ public class BotManager {
         }
     }
 
-    private void serviceFemale() throws SQLException {
+    private void serviceFemale() throws SQLException, ServerException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 String.format("SELECT\n" +
                         "\tpost.pid\n" +
@@ -129,7 +129,7 @@ public class BotManager {
         public void run() {
             try {
                 serviceBot();
-            } catch (SQLException ex) {
+            } catch (SQLException | ServerException ex) {
                 getContext().getLogger().log(Level.SEVERE, "Regular bot service error: " + ex.toString());
             }
         }
@@ -140,7 +140,7 @@ public class BotManager {
         public void run() {
             try {
                 serviceMale();
-            } catch (SQLException ex) {
+            } catch (SQLException | ServerException ex) {
                 getContext().getLogger().log(Level.SEVERE, "Male bot service error: " + ex.toString());
             }
         }
@@ -151,7 +151,7 @@ public class BotManager {
         public void run() {
             try {
                 serviceFemale();
-            } catch (SQLException ex) {
+            } catch (SQLException | ServerException ex) {
                 getContext().getLogger().log(Level.SEVERE, "Female bot service error: " + ex.toString());
             }
         }

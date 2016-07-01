@@ -422,6 +422,42 @@ public class DBManager {
         getContext().getDBConnector().executeUpdate(sql);
     }
 
+    public boolean submitMood(int uid, int mood) throws SQLException {
+        ResultSet check = getContext().getDBConnector().executeQuery(String.format(
+                "SELECT mid FROM mood WHERE uid = %d AND DATE(timestamp) = CURDATE()", uid));
+        if (check.next()) {
+            return false;
+        } else {
+            getContext().getDBConnector().executeUpdate(String.format(
+                    "INSERT INTO mood (uid, mood, timestamp) VALUES (%d, %d, now())", uid, mood));
+            return true;
+        }
+    }
+
+    public JSONObject listMoods(int uid, int page) throws SQLException {
+        String sql = String.format(
+                "SELECT mid, uid, mood, timestamp FROM mood WHERE uid = %d ORDER BY mid DESC LIMIT %d, %d",
+                uid, page * 10, 10);
+        ResultSet result = getContext().getDBConnector().executeQuery(sql);
+        JSONArray moods = createPostList(result);
+        JSONObject response = new JSONObject();
+        response.put("moods", moods);
+        return response;
+    }
+
+    private JSONArray createMoodList(ResultSet result) throws SQLException {
+        JSONArray moods = new JSONArray();
+        while (result.next()) {
+            JSONObject mood = new JSONObject();
+            mood.put("mid", result.getInt("mid"));
+            mood.put("uid", result.getInt("uid"));
+            mood.put("mood", result.getInt("mid"));
+            mood.put("timestamp", result.getTimestamp("timestamp").getTime());
+            moods.put(mood);
+        }
+        return moods;
+    }
+
     public void record(int uid) throws SQLException {
         getContext().getDBConnector().executeUpdate(
                 String.format("UPDATE user SET using_times = using_times + 1 WHERE uid = %d", uid));
