@@ -315,7 +315,7 @@ public class DBManager {
                                     "\tuser, comment\n" +
                                     "WHERE\n" +
                                     "\tuser.uid = comment.uid AND comment.pid = %d\n" +
-                                    "ORDER BY timestamp DESC\n" +
+                                    "ORDER BY timestamp ASC\n" +
                                     "LIMIT %d, %d", pid, page * 10, 10));
             JSONArray comments = createCommentList(result);
             JSONObject response = new JSONObject();
@@ -439,7 +439,7 @@ public class DBManager {
                 "SELECT mid, uid, mood, timestamp FROM mood WHERE uid = %d ORDER BY mid DESC LIMIT %d, %d",
                 uid, page * 10, 10);
         ResultSet result = getContext().getDBConnector().executeQuery(sql);
-        JSONArray moods = createPostList(result);
+        JSONArray moods = createMoodList(result);
         JSONObject response = new JSONObject();
         response.put("moods", moods);
         return response;
