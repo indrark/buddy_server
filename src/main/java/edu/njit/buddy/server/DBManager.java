@@ -181,7 +181,7 @@ public class DBManager {
 
     public JSONObject listPosts(int uid, int page, int category, int attention, int target_uid) throws SQLException {
         String category_replacer = category >= 0 ? "AND post.category = " + category : "";
-        String attention_replacer = attention == 1 ? "AND bells.bells >=2" : "";
+        String attention_replacer = attention == 1 ? "AND bells.bells >=2 AND user.mood >= 5" : "";
         String target_replacer = target_uid > 0 ? "AND post.uid = " + target_uid : "";
         String sql = String.format(
                 "SELECT \n" +
@@ -430,6 +430,8 @@ public class DBManager {
         } else {
             getContext().getDBConnector().executeUpdate(String.format(
                     "INSERT INTO mood (uid, mood, timestamp) VALUES (%d, %d, now())", uid, mood));
+            getContext().getDBConnector().executeUpdate(String.format(
+                    "UPDATE user SET mood = %d WHERE uid = %d", mood, uid));
             return true;
         }
     }
