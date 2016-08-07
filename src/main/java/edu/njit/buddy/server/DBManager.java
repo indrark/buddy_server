@@ -112,8 +112,12 @@ public class DBManager {
     }
 
     public void post(int uid, int category, String content) throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                String.format("SELECT mood FROM mood WHERE date(`timestamp`) = curdate() AND uid = %d", uid));
+        int mood = result.next() ? result.getInt("mood") : -1;
         String sql = String.format(
-                "INSERT INTO post (uid, category, content) VALUES (%d, %d, '%s')", uid, category, escape(content));
+                "INSERT INTO post (uid, category, content, mood) VALUES (%d, %d, '%s', %d)",
+                uid, category, escape(content), mood);
         getContext().getDBConnector().executeUpdate(sql);
     }
 
@@ -181,7 +185,7 @@ public class DBManager {
 
     public JSONObject listPosts(int uid, int page, int category, int attention, int target_uid) throws SQLException {
         String category_replacer = category >= 0 ? "AND post.category = " + category : "";
-        String attention_replacer = attention == 1 ? "AND bells.bells >=2 AND user.mood >= 5" : "";
+        String attention_replacer = attention == 1 ? "AND (bells.bells >=2 OR post.mood >= 5)" : "";
         String target_replacer = target_uid > 0 ? "AND post.uid = " + target_uid : "";
         String sql = String.format(
                 "SELECT \n" +
@@ -430,8 +434,6 @@ public class DBManager {
         } else {
             getContext().getDBConnector().executeUpdate(String.format(
                     "INSERT INTO mood (uid, mood, timestamp) VALUES (%d, %d, now())", uid, mood));
-            getContext().getDBConnector().executeUpdate(String.format(
-                    "UPDATE user SET mood = %d WHERE uid = %d", mood, uid));
             return true;
         }
     }
@@ -453,7 +455,7 @@ public class DBManager {
             JSONObject mood = new JSONObject();
             mood.put("mid", result.getInt("mid"));
             mood.put("uid", result.getInt("uid"));
-            mood.put("mood", result.getInt("mid"));
+            mood.put("mood", result.getInt("mood"));
             mood.put("timestamp", result.getTimestamp("timestamp").getTime());
             moods.put(mood);
         }
