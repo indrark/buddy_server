@@ -11,6 +11,8 @@ public interface Context {
 
     Logger getLogger();
 
+    ServerConfiguration getConfiguration();
+
     HttpServer getHttpServer();
 
     DBManager getDBManager();

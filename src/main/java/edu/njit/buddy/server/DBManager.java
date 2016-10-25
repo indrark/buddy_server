@@ -83,14 +83,28 @@ public class DBManager {
                 "SELECT uid FROM user WHERE email = '%s' AND password = '%s'", escape(email), encode(password)));
         if (result.next()) {
             int uid = result.getInt("uid");
-            String authorization = Encoder.encode(email + password + System.currentTimeMillis());
-            getContext().getDBConnector().executeUpdate(String.format(
-                    "UPDATE user SET authorization = '%s' WHERE uid = '%d'", authorization, uid));
+            String authorization = createAuthorization(uid, email, password);
             response.put("uid", uid);
             response.put("authorization", authorization);
             return response;
         } else {
-            throw new PasswordMismatchException(String.format("Password mismatch for email [%s]", email));
+            throw new PasswordMismatchException(String.format("Password mismatch for [%s]", email));
+        }
+    }
+
+    private String createAuthorization(int uid, String email, String password) throws SQLException, ServerException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                String.format("SELECT authorization FROM user WHERE uid = '%d'", uid));
+        if (result.next()) {
+            String authorization = result.getString("authorization");
+            if (authorization == null) {
+                authorization = Encoder.encode(email + password + System.currentTimeMillis());
+                getContext().getDBConnector().executeUpdate(String.format(
+                        "UPDATE user SET authorization = '%s' WHERE uid = '%d'", authorization, uid));
+            }
+            return authorization;
+        } else {
+            throw new ServerException("Cannot create authorization for [" + email + "]");
         }
     }
 

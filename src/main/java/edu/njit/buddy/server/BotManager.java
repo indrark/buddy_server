@@ -2,6 +2,7 @@ package edu.njit.buddy.server;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -13,58 +14,34 @@ public class BotManager {
 
     private final Context context;
 
-    private final boolean enabled;
+    private final ArrayList<Bot> bots;
 
-    private final int bot_uid;
-    private final int male_uid;
-    private final int female_uid;
-
-    private final Timer bot_timer;
-    private final Timer male_timer;
-    private final Timer female_timer;
-
-    public BotManager(Context context, boolean enabled, int bot_uid, int male_uid, int female_uid) {
+    public BotManager(Context context, ServerConfiguration.BotConfiguration configuration) {
         this.context = context;
-        this.enabled = enabled;
-        this.bot_uid = bot_uid;
-        this.male_uid = male_uid;
-        this.female_uid = female_uid;
-        this.bot_timer = new Timer();
-        this.male_timer = new Timer();
-        this.female_timer = new Timer();
+        this.bots = new ArrayList<>();
+        for (int index = 0; index < configuration.getBotCount(); index++) {
+            bots.add(new Bot(
+                    configuration.getUID(index), configuration.getTestGroup(index), configuration.getInterval(index)));
+        }
     }
 
     public Context getContext() {
         return context;
     }
 
-    public int getBotUID() {
-        return bot_uid;
-    }
-
-    public int getMaleUID() {
-        return male_uid;
-    }
-
-    public int getFemaleUID() {
-        return female_uid;
-    }
-
     public void start() {
-        if (enabled) {
-            bot_timer.scheduleAtFixedRate(bot_task, 1000, 60000);
-            male_timer.scheduleAtFixedRate(male_task, 2000, 600000);
-            female_timer.scheduleAtFixedRate(female_task, 2000, 600000);
+        for (Bot bot : bots) {
+            bot.start();
         }
     }
 
     public void stop() {
-        bot_timer.cancel();
-        male_timer.cancel();
-        female_timer.cancel();
+        for (Bot bot : bots) {
+            bot.stop();
+        }
     }
 
-    private void serviceBot() throws SQLException, ServerException {
+    private void service(int uid, int test_group) throws SQLException, ServerException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 String.format("SELECT\n" +
                         "\tpost.pid\n" +
@@ -78,83 +55,48 @@ public class BotManager {
                         "\tpost.pid = hugged.pid AND\n" +
                         "    post.uid = user.uid AND\n" +
                         "    user.test_group = %d AND\n" +
-                        "    hugged.hugged = 0", getBotUID(), 0));
+                        "    hugged.hugged = 0", uid, test_group));
         while (result.next()) {
-            getContext().getDBManager().hug(getBotUID(), result.getInt("pid"));
+            getContext().getDBManager().hug(uid, result.getInt("pid"));
         }
     }
 
-    private void serviceMale() throws SQLException, ServerException {
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format("SELECT\n" +
-                        "\tpost.pid\n" +
-                        "FROM\n" +
-                        "\tpost, user,\n" +
-                        "    (SELECT\n" +
-                        "\t\tpost.pid, count(hug.hid) AS hugged\n" +
-                        "\t FROM post LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
-                        "\t GROUP BY post.pid) AS hugged\n" +
-                        "WHERE\n" +
-                        "\tpost.pid = hugged.pid AND\n" +
-                        "    post.uid = user.uid AND\n" +
-                        "    user.test_group = %d AND\n" +
-                        "    hugged.hugged = 0", getMaleUID(), 1));
-        while (result.next()) {
-            getContext().getDBManager().hug(getMaleUID(), result.getInt("pid"));
+    private class Bot {
+
+        private final int uid;
+
+        private final int test_group;
+
+        private final long interval;
+
+        private Timer timer;
+
+        public Bot(int uid, int test_group, long interval) {
+            this.uid = uid;
+            this.test_group = test_group;
+            this.interval = interval;
+            this.timer = new Timer();
         }
+
+        public void start() {
+            timer.scheduleAtFixedRate(bot_task, interval, interval);
+        }
+
+        public void stop() {
+            timer.cancel();
+        }
+
+        private final TimerTask bot_task = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    service(uid, test_group);
+                } catch (SQLException | ServerException ex) {
+                    getContext().getLogger().log(Level.SEVERE, "Regular bot service error: " + ex.toString());
+                }
+            }
+        };
+
     }
-
-    private void serviceFemale() throws SQLException, ServerException {
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format("SELECT\n" +
-                        "\tpost.pid\n" +
-                        "FROM\n" +
-                        "\tpost, user,\n" +
-                        "    (SELECT\n" +
-                        "\t\tpost.pid, count(hug.hid) AS hugged\n" +
-                        "\t FROM post LEFT OUTER JOIN hug ON post.pid = hug.pid AND hug.uid = %d\n" +
-                        "\t GROUP BY post.pid) AS hugged\n" +
-                        "WHERE\n" +
-                        "\tpost.pid = hugged.pid AND\n" +
-                        "    post.uid = user.uid AND\n" +
-                        "    user.test_group = %d AND\n" +
-                        "    hugged.hugged = 0", getFemaleUID(), 2));
-        while (result.next()) {
-            getContext().getDBManager().hug(getFemaleUID(), result.getInt("pid"));
-        }
-    }
-
-    private final TimerTask bot_task = new TimerTask() {
-        @Override
-        public void run() {
-            try {
-                serviceBot();
-            } catch (SQLException | ServerException ex) {
-                getContext().getLogger().log(Level.SEVERE, "Regular bot service error: " + ex.toString());
-            }
-        }
-    };
-
-    private final TimerTask male_task = new TimerTask() {
-        @Override
-        public void run() {
-            try {
-                serviceMale();
-            } catch (SQLException | ServerException ex) {
-                getContext().getLogger().log(Level.SEVERE, "Male bot service error: " + ex.toString());
-            }
-        }
-    };
-
-    private final TimerTask female_task = new TimerTask() {
-        @Override
-        public void run() {
-            try {
-                serviceFemale();
-            } catch (SQLException | ServerException ex) {
-                getContext().getLogger().log(Level.SEVERE, "Female bot service error: " + ex.toString());
-            }
-        }
-    };
 
 }

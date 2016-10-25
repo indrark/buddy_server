@@ -6,7 +6,7 @@
 
     <groupId>edu.njit.buddy</groupId>
     <artifactId>app-server</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -48,7 +48,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>libs/</classpathPrefix>
-                            <mainClass>edu.njit.buddy.server.BuddyServer</mainClass>
+                            <mainClass>edu.njit.buddy.server.ServerLauncher</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

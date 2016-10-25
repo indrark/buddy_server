@@ -3,14 +3,10 @@ package edu.njit.buddy.server;
 import edu.njit.buddy.server.service.*;
 import org.glassfish.grizzly.http.server.HttpServer;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -21,6 +17,8 @@ public class BuddyServer implements Context {
     private static final Logger logger = Logger.getLogger(BuddyServer.class.getName());
 
     private final Object SERVER_LOCK = new Object();
+
+    private final ServerConfiguration configuration;
 
     private HttpServer server;
 
@@ -40,45 +38,33 @@ public class BuddyServer implements Context {
 
     private int current_test_group;
 
-    public void initialize() throws IOException, SQLException, ServerException {
-        Properties properties = loadConfiguration();
+    public BuddyServer(ServerConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
-        int server_port = Integer.parseInt(properties.getProperty("SERVER_PORT", "80"));
-        String doc_root = properties.getProperty("DOC_ROOT", "html/");
-        this.server = HttpServer.createSimpleServer(doc_root, server_port);
+    public void initialize() throws IOException, SQLException, ServerException {
+        this.server = HttpServer.createSimpleServer(getConfiguration().getDocumentRoot(), getConfiguration().getPort());
 
         this.db_connector = new DBConnector();
-        String database_host = properties.getProperty("DATABASE_HOST", "127.0.0.1");
-        String database_name = properties.getProperty("DATABASE_NAME", "buddy");
-        String database_timezone = properties.getProperty("DATABASE_TIMEZONE", "-5:00");
-        String database_username = properties.getProperty("DATABASE_USERNAME", "super_buddy");
-        String database_password = properties.getProperty("DATABASE_PASSWORD", "buddy_password");
-        getDBConnector().connect(database_host, database_name, database_timezone, database_username, database_password);
+        getDBConnector().connect(
+                getConfiguration().getDatabaseHost(),
+                getConfiguration().getDatabaseName(),
+                getConfiguration().getDatabaseTimezone(),
+                getConfiguration().getDatabaseUsername(),
+                getConfiguration().getDatabasePassword());
 
         this.db_manager = new DBManager(this);
 
-        String GMAIL_USERNAME = properties.getProperty("GMAIL_USERNAME", "buddy");
-        String GMAIL_PASSWORD = properties.getProperty("GMAIL_PASSWORD", "password");
-        this.mail_sender = new MailSender(GMAIL_USERNAME, GMAIL_PASSWORD);
+        this.mail_sender = new MailSender(getConfiguration().getGmailUsername(), getConfiguration().getGmailPassword());
 
-        this.CLEAN_RATE = Long.parseLong(properties.getProperty("CLEAN_RATE", "21600000"));
+        this.CLEAN_RATE = getConfiguration().getCleanRate();
 
-        long VERIFICATION_VALIDITY = Long.parseLong(properties.getProperty("VERIFICATION_VALIDITY", "3600000"));
-        long RECOVERY_VALIDITY = Long.parseLong(properties.getProperty("RECOVERY_VALIDITY", "1800000"));
+        long VERIFICATION_VALIDITY = getConfiguration().getVerificationValidity();
+        long RECOVERY_VALIDITY = getConfiguration().getRecoveryValidity();
         this.token_manager = new TokenManager(VERIFICATION_VALIDITY, RECOVERY_VALIDITY);
 
         this.current_test_group = getDBManager().getCurrentTestGroup();
-
-        try {
-            boolean bot_enabled = Boolean.parseBoolean(properties.getProperty("HUGBOT_ENABLED", "false"));
-
-            int bot_uid = Integer.parseInt(properties.getProperty("HUGBOT_BOT_UID", "NULL"));
-            int male_uid = Integer.parseInt(properties.getProperty("HUGBOT_MALE_UID", "NULL"));
-            int female_uid = Integer.parseInt(properties.getProperty("HUGBOT_FEMALE_UID", "NULL"));
-            this.bot_manager = new BotManager(this, bot_enabled, bot_uid, male_uid, female_uid);
-        } catch (NumberFormatException ex) {
-            throw new ServerException("Hug bot uid is not specified correctly", ex);
-        }
+        this.bot_manager = new BotManager(this, getConfiguration().getBotConfiguration());
 
         this.timer = new Timer();
 
@@ -99,14 +85,6 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new MoodSubmitService(this), "/mood/submit");
         getHttpServer().getServerConfiguration().addHttpHandler(new MoodListService(this), "/mood/list");
         getHttpServer().getServerConfiguration().addHttpHandler(new RecordService(this), "/record");
-    }
-
-    private Properties loadConfiguration() throws IOException {
-        File configure_file = new File("server.conf");
-        FileInputStream fis = new FileInputStream(configure_file);
-        Properties properties = new Properties();
-        properties.load(fis);
-        return properties;
     }
 
     public void start() throws IOException, InterruptedException {
@@ -136,6 +114,11 @@ public class BuddyServer implements Context {
     }
 
     @Override
+    public ServerConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    @Override
     public HttpServer getHttpServer() {
         return server;
     }
@@ -162,27 +145,8 @@ public class BuddyServer implements Context {
 
     @Override
     public int getNextTestGroup() {
-        return current_test_group < 2 ? current_test_group + 1 : 0;
-    }
-
-    public static void main(String[] args) {
-        Runnable server_launcher = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    BuddyServer server = new BuddyServer();
-                    server.initialize();
-                    server.start();
-                } catch (InterruptedException ex) {
-                    logger.log(Level.SEVERE, "Server was interrupted.");
-                } catch (ServerException | IOException ex) {
-                    logger.log(Level.SEVERE, "Error starting server: " + ex.toString());
-                } catch (SQLException ex) {
-                    logger.log(Level.SEVERE, "Error connecting to database: " + ex.toString());
-                }
-            }
-        };
-        new Thread(server_launcher, "server-launch-thread").start();
+        current_test_group = current_test_group == 1 ? 0 : 1;
+        return current_test_group;
     }
 
 }
