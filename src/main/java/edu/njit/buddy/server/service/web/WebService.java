@@ -75,10 +75,9 @@ public abstract class WebService extends StaticHttpHandlerBase {
 
     protected abstract void handle(final Request request, final Response response) throws Exception;
 
-    protected final void sendResource(Request request, Response response, File resource) throws IOException {
+    protected final void sendResource(Response response, File resource) throws IOException {
         pickupContentType(response, resource.getPath());
 
-        addToFileCache(request, response, resource);
         sendFile(response, resource);
     }
 

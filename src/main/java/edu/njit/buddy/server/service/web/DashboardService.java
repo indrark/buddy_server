@@ -20,7 +20,7 @@ public class DashboardService extends WebService {
     @Override
     protected void handle(Request request, Response response) throws Exception {
         File resource = new File(admin_dir, "/dashboard.html");
-        sendResource(request, response, resource);
+        sendResource(response, resource);
     }
 
 }
