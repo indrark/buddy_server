@@ -45,17 +45,17 @@ public abstract class WebService extends StaticHttpHandlerBase {
                     if (checkAdministrator(request.getCookies())) {
                         handle(request, response);
                     } else {
-                        response.sendError(403);
+                        response.sendError(403, "Only administrators may have access to this page.");
                     }
                 } else {
                     handle(request, response);
                 }
             } else {
-                response.sendError(405);
+                response.sendError(405, "Allowed method: [" + method.toString() + "]");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.sendError(500);
+            response.sendError(500, "Something went wrong and brought away your request :(");
         }
         return true;
     }
