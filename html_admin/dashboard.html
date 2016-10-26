@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Buddy Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="/css/dashboard.css">
+    <script src="/scripts/jquery-3.1.1.min.js"></script>
+    <script src="/scripts/jquery.cookie.js"></script>
+</head>
+<body>
+<h1 id="header" align="center">Buddy Dashboard</h1>
+<hr size="1" noshade="" color="#000000">
+<div id="status-bar" align="center">
+<label>Total Users:&nbsp</label><span id="status-user-count">loading...</span>
+</div>
+<hr size="1" noshade="" color="#000000">
+<div align="center">Under Construction</div>
+<script>
+    function setServerStatus(data) {
+        if(data.response_code == 1) {
+            $("[id='status-user-count']").text(data.user_count);
+        } else {
+            $("[id='status-user-count']").text("error");
+        }
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/admin/status",
+        data:"{}",
+        headers: {
+            "authorization":$.cookie('authorization')
+        },
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data){
+            setServerStatus(data);
+        },
+        failure: function(errMsg) {
+            alert(errMsg);
+            $("[id='status-user-count']").text("error");
+        }
+    });
+</script>
+</body>
+</html>

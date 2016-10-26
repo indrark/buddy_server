@@ -1,6 +1,8 @@
 package edu.njit.buddy.server;
 
 import edu.njit.buddy.server.service.*;
+import edu.njit.buddy.server.service.web.AdministratorLoginService;
+import edu.njit.buddy.server.service.web.DashboardService;
 import org.glassfish.grizzly.http.server.HttpServer;
 
 import java.io.IOException;
@@ -43,7 +45,7 @@ public class BuddyServer implements Context {
     }
 
     public void initialize() throws IOException, SQLException, ServerException {
-        this.server = HttpServer.createSimpleServer(getConfiguration().getDocumentRoot(), getConfiguration().getPort());
+        this.server = HttpServer.createSimpleServer("html", getConfiguration().getPort());
 
         this.db_connector = new DBConnector();
         getDBConnector().connect(
@@ -68,6 +70,7 @@ public class BuddyServer implements Context {
 
         this.timer = new Timer();
 
+        //API Services
         getHttpServer().getServerConfiguration().addHttpHandler(new RegisterService(this), "/register");
         getHttpServer().getServerConfiguration().addHttpHandler(new LoginService(this), "/login");
         getHttpServer().getServerConfiguration().addHttpHandler(new PostCreateService(this), "/post/create");
@@ -85,6 +88,11 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new MoodSubmitService(this), "/mood/submit");
         getHttpServer().getServerConfiguration().addHttpHandler(new MoodListService(this), "/mood/list");
         getHttpServer().getServerConfiguration().addHttpHandler(new RecordService(this), "/record");
+        getHttpServer().getServerConfiguration().addHttpHandler(new ServerStatusService(this), "/admin/status");
+
+        //Web Services
+        getHttpServer().getServerConfiguration().addHttpHandler(new AdministratorLoginService(this), "/admin/login");
+        getHttpServer().getServerConfiguration().addHttpHandler(new DashboardService(this), "/admin/dashboard");
     }
 
     public void start() throws IOException, InterruptedException {

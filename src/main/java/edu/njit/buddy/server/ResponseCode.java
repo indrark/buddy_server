@@ -37,6 +37,8 @@ public class ResponseCode {
 
     public static final int MAIL_SENDING_TOO_FREQUENT = 101;
 
+    public static final int ACCESS_DENIED = 102;
+
     public static final int REQUEST_NOT_SUPPORTED = 200;
 
 }

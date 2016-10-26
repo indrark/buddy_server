@@ -25,6 +25,8 @@ public abstract class Service extends HttpHandler {
 
     private final boolean need_authorization;
 
+    private boolean check_administrator = false;
+
     public Service(Context context, boolean need_authorization) {
         super();
         this.context = context;
@@ -35,6 +37,10 @@ public abstract class Service extends HttpHandler {
         return context;
     }
 
+    public void setCheckAdministrator(boolean check_administrator) {
+        this.check_administrator = check_administrator;
+    }
+
     @Override
     public void service(Request request, Response response) {
         try {
@@ -43,6 +49,10 @@ public abstract class Service extends HttpHandler {
                 if (need_authorization) {
                     String authorization = request.getAuthorization();
                     uid = getContext().getDBManager().getUID(authorization);
+                    if (check_administrator && !getContext().getDBManager().checkAdministrator(authorization)) {
+                        onFail(response, ResponseCode.ACCESS_DENIED);
+                        return;
+                    }
                 }
                 InputStreamReader ir = new InputStreamReader(request.getInputStream(), "UTF-8");
                 BufferedReader br = new BufferedReader(ir);

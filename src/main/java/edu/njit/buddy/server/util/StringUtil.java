@@ -6,7 +6,7 @@ package edu.njit.buddy.server.util;
 public class StringUtil {
 
     public static String escape(String str) {
-        return str.replace("'", "''").replace("\\", "\\\\");
+        return str == null ? null : str.replace("'", "''").replace("\\", "\\\\");
     }
 
 }

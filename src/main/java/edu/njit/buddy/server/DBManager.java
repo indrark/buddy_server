@@ -70,6 +70,16 @@ public class DBManager {
         }
     }
 
+    public boolean checkAdministrator(String authorization) throws SQLException {
+        if (authorization == null) {
+            return false;
+        } else {
+            ResultSet result = getContext().getDBConnector().executeQuery(String.format(
+                    "SELECT admin FROM user WHERE authorization = '%s'", authorization));
+            return result.next() && result.getInt("admin") == 1;
+        }
+    }
+
     public void register(String email, String username, String password) throws ServerException, SQLException {
         String sql = String.format(
                 "INSERT INTO user (email, username, password, test_group) VALUES ('%s', '%s', '%s', %d)",
@@ -479,6 +489,14 @@ public class DBManager {
     public void record(int uid) throws SQLException {
         getContext().getDBConnector().executeUpdate(
                 String.format("UPDATE user SET using_times = using_times + 1 WHERE uid = %d", uid));
+    }
+
+    public JSONObject getServerStatus() throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery("SELECT count(uid) AS user_count FROM user");
+        result.next();
+        JSONObject status = new JSONObject();
+        status.put("user_count", result.getInt("user_count"));
+        return status;
     }
 
 }

@@ -16,8 +16,6 @@ public class ServerConfiguration {
 
     private final int port;
 
-    private final String doc_root;
-
     private final String database_host;
 
     private final String database_name;
@@ -42,7 +40,6 @@ public class ServerConfiguration {
 
     private ServerConfiguration(String name,
                                 int port,
-                                String doc_root,
                                 String database_host,
                                 String database_name,
                                 String database_username,
@@ -56,7 +53,6 @@ public class ServerConfiguration {
                                 long recovery_validity) {
         this.name = name;
         this.port = port;
-        this.doc_root = doc_root;
         this.database_host = database_host;
         this.database_name = database_name;
         this.database_username = database_username;
@@ -76,10 +72,6 @@ public class ServerConfiguration {
 
     public final int getPort() {
         return port;
-    }
-
-    public final String getDocumentRoot() {
-        return doc_root;
     }
 
     public final String getDatabaseHost() {
@@ -137,7 +129,6 @@ public class ServerConfiguration {
             JSONObject json_server = json_servers.getJSONObject(server_index);
             String name = json_server.getString("name");
             int port = json_server.getInt("port");
-            String doc_root = json_server.getString("doc_root");
             String database_host = json_server.getString("database_host");
             String database_name = json_server.getString("database_name");
             String database_username = json_server.getString("database_username");
@@ -158,7 +149,6 @@ public class ServerConfiguration {
             server_configurations.add(new ServerConfiguration(
                     name,
                     port,
-                    doc_root,
                     database_host,
                     database_name,
                     database_username,

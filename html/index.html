@@ -2,11 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Buddy</title>
+    <title>Buddy Administrator Login</title>
+    <link rel="stylesheet" type="text/css" href="css/index.css">
 </head>
 <body>
-<p>
-    Buddy Server Main Page
-</p>
+<h1 align="center">Administrator Login</h1>
+<div align="center">
+    <form action="/admin/login" method="post">
+        <label>Email: </label><input class="text-input" type="email" name="email"><br>
+        <label>Password: </label><input class="text-input" type="password" name="password"><br>
+        <input class="button" type="submit" value="Login">
+    </form>
+</div>
 </body>
 </html>
