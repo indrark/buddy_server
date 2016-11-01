@@ -1,5 +1,7 @@
 package edu.njit.buddy.server;
 
+import edu.njit.buddy.server.exceptions.TokenExpiredException;
+
 import java.util.*;
 
 /**

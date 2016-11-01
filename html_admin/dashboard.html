@@ -6,41 +6,42 @@
     <link rel="stylesheet" type="text/css" href="/css/dashboard.css">
     <script src="/scripts/jquery-3.1.1.min.js"></script>
     <script src="/scripts/jquery.cookie.js"></script>
+    <script src="/scripts/dashboard.js"></script>
 </head>
 <body>
-<h1 id="header" align="center">Buddy Dashboard</h1>
-<hr size="1" noshade="" color="#000000">
-<div id="status-bar" align="center">
-<label>Total Users:&nbsp</label><span id="status-user-count">loading...</span>
-</div>
-<hr size="1" noshade="" color="#000000">
-<div align="center">Under Construction</div>
-<script>
-    function setServerStatus(data) {
-        if(data.response_code == 1) {
-            $("[id='status-user-count']").text(data.user_count);
-        } else {
-            $("[id='status-user-count']").text("error");
-        }
-    }
+    <h1 id="header" align="center">Buddy Dashboard</h1>
+    <hr size="1" noshade="" color="#000000">
+    <div id="status-bar" align="center">
+        Total Users:<span class="value-display" id="status-user-count">null</span>
+        &nbspTotal Posts:<span class="value-display" id="status-post-count">null</span>
+        <button onclick="tryUpdateServerStatus()">Refresh</button>
+    </div>
+    <hr size="1" noshade="" color="#000000">
+    <div class="function-header">
+        <label class="function-title">Post Management</label>
+        UID&nbsp<input type="number" id="input-uid" min="-1" value="-1">
+        &nbspAttention&nbsp<input type="checkbox" id="checkbox-attention">
+        &nbspFlag&nbsp<input type="checkbox" id="checkbox-flag">
+        &nbsp<button onclick="trySearchPostPage(0)">Search</button>
+    </div>
+    <div id="post-list" align="center"></div>
+    <div class="page-control" align="center">
+        <button id="post-control-previous" onclick="gotoPreviousPostPage()"><</button>
+        <span class="value-display" id="value-current-page">0</span>
+        <button id="post-control-next" onclick="gotoNextPostPage()">></button>
+    </div>
+    <hr size="1" noshade="" color="#000000">
+    <div align="center">Under Construction</div>
 
-    $.ajax({
-        type: "POST",
-        url: "/admin/status",
-        data:"{}",
-        headers: {
-            "authorization":$.cookie('authorization')
-        },
-        contentType: "application/json; charset=utf-8",
-        dataType: "json",
-        success: function(data){
-            setServerStatus(data);
-        },
-        failure: function(errMsg) {
-            alert(errMsg);
-            $("[id='status-user-count']").text("error");
-        }
-    });
-</script>
+    <div id="placeholder">
+        <div id="placeholder-content">
+            <img src="/images/loading.gif">
+        </div>
+    </div>
+
+    <script>
+        updatePostPageControl();
+        tryUpdateServerStatus();
+    </script>
 </body>
 </html>

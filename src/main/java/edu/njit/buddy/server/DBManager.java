@@ -3,8 +3,7 @@ package edu.njit.buddy.server;
 import static edu.njit.buddy.server.util.Encoder.*;
 import static edu.njit.buddy.server.util.StringUtil.*;
 
-import edu.njit.buddy.server.service.NotAuthorizedException;
-import edu.njit.buddy.server.service.UserNotFoundException;
+import edu.njit.buddy.server.exceptions.*;
 import edu.njit.buddy.server.util.Encoder;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -80,6 +79,12 @@ public class DBManager {
         }
     }
 
+    public boolean checkAdministrator(int uid) throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(String.format(
+                "SELECT admin FROM user WHERE uid = '%d'", uid));
+        return result.next() && result.getInt("admin") == 1;
+    }
+
     public void register(String email, String username, String password) throws ServerException, SQLException {
         String sql = String.format(
                 "INSERT INTO user (email, username, password, test_group) VALUES ('%s', '%s', '%s', %d)",
@@ -145,6 +150,31 @@ public class DBManager {
         getContext().getDBConnector().executeUpdate(sql);
     }
 
+    public void deletePost(int uid, int pid) throws SQLException, ServerException {
+        int post_uid = getPostUID(pid);
+        if (post_uid > 0) {
+            if (uid == post_uid) {
+                doDeletePost(pid);
+            } else {
+                if (checkAdministrator(uid)) {
+                    doDeletePost(pid);
+                } else {
+                    throw new AccessDeniedException(String.format("Post [%d] deleting denied for user [%d]", pid, uid));
+                }
+            }
+        } else {
+            throw new PostNotFoundException(String.format("Post [%d] not found!", pid));
+        }
+    }
+
+    private void doDeletePost(int pid) throws SQLException {
+        getContext().getDBConnector().executeUpdate(String.format("DELETE FROM post WHERE pid = '%d'", pid));
+        getContext().getDBConnector().executeUpdate(String.format("DELETE FROM hug WHERE pid = '%d'", pid));
+        getContext().getDBConnector().executeUpdate(String.format("DELETE FROM bell WHERE pid = '%d'", pid));
+        getContext().getDBConnector().executeUpdate(String.format("DELETE FROM flag WHERE pid = '%d'", pid));
+        getContext().getDBConnector().executeUpdate(String.format("DELETE FROM comment WHERE pid = '%d'", pid));
+    }
+
     public void flag(int uid, int pid) throws SQLException, ServerException {
         if (isExistingPost(pid)) {
             ResultSet result = getContext().getDBConnector().executeQuery(
@@ -207,19 +237,34 @@ public class DBManager {
         }
     }
 
-    public JSONObject listPosts(int uid, int page, int category, int attention, int target_uid) throws SQLException {
+    public JSONObject listPosts(int uid, int page, int category, int attention, int target_uid, int flagged)
+            throws SQLException {
         String category_replacer = category >= 0 ? "AND post.category = " + category : "";
         String attention_replacer = attention == 1 ? "AND (bells.bells >=2 OR post.mood >= 5)" : "";
         String target_replacer = target_uid > 0 ? "AND post.uid = " + target_uid : "";
+        String flag_replacer;
+        switch (flagged) {
+            case -1:
+                flag_replacer = "";
+                break;
+            case 1:
+                flag_replacer = "AND flags.flags > 0";
+                break;
+            case 0:
+            default:
+                flag_replacer = "AND flags.flags < 2";
+        }
         String sql = String.format(
                 "SELECT \n" +
                         "\tpost.pid, \n" +
                         "\tpost.uid, \n" +
+                        "\tpost.mood, \n" +
                         "\tuser.username, \n" +
                         "\tpost.timestamp, \n" +
                         "\tpost.category, \n" +
                         "\tpost.content, \n" +
                         "\thugs.hugs, \n" +
+                        "\tflags.flags, \n" +
                         "\tcomments.comments, \n" +
                         "\thugged.hugged, \n" +
                         "\tbelled.belled, \n" +
@@ -236,6 +281,11 @@ public class DBManager {
                         "\tFROM \n" +
                         "\t\tpost LEFT OUTER JOIN bell ON post.pid = bell.pid \n" +
                         "\tGROUP BY post.pid) AS bells,\n" +
+                        "\t(SELECT \n" +
+                        "\t\tpost.pid, count(flag.fid) AS flags \n" +
+                        "\tFROM \n" +
+                        "\t\tpost LEFT OUTER JOIN flag ON post.pid = flag.pid \n" +
+                        "\tGROUP BY post.pid) AS flags,\n" +
                         "\t(SELECT \n" +
                         "\t\tpost.pid, count(comment.cid) AS comments \n" +
                         "\tFROM \n" +
@@ -260,6 +310,7 @@ public class DBManager {
                         "\tpost.uid = user.uid \n" +
                         "\tAND post.pid = hugs.pid \n" +
                         "\tAND post.pid = bells.pid\n" +
+                        "\tAND post.pid = flags.pid\n" +
                         "\tAND post.pid = comments.pid\n" +
                         "\tAND post.pid = hugged.pid \n" +
                         "\tAND post.pid = belled.pid \n" +
@@ -267,9 +318,10 @@ public class DBManager {
                         "\t%s\n" +
                         "\t%s\n" +
                         "\t%s\n" +
+                        "\t%s\n" +
                         "ORDER BY post.pid DESC\n" +
                         "LIMIT %d, %d",
-                uid, uid, uid, attention_replacer, category_replacer, target_replacer, page * 10, 10);
+                uid, uid, uid, attention_replacer, category_replacer, target_replacer, flag_replacer, page * 10, 10);
         ResultSet result = getContext().getDBConnector().executeQuery(sql);
         JSONArray posts = createPostList(result);
         JSONObject response = new JSONObject();
@@ -288,6 +340,7 @@ public class DBManager {
             post.put("category", result.getInt("category"));
             post.put("content", result.getString("content"));
             post.put("hugs", result.getInt("hugs"));
+            post.put("flags", result.getInt("flags"));
             post.put("comments", result.getInt("comments"));
             post.put("hugged", result.getInt("hugged"));
             post.put("belled", result.getInt("belled"));
@@ -491,11 +544,26 @@ public class DBManager {
                 String.format("UPDATE user SET using_times = using_times + 1 WHERE uid = %d", uid));
     }
 
-    public JSONObject getServerStatus() throws SQLException {
+    public int getPostUID(int pid) throws SQLException {
+        ResultSet result =
+                getContext().getDBConnector().executeQuery(String.format("SELECT uid FROM post WHERE pid = %s", pid));
+        return result.next() ? result.getInt("uid") : -1;
+    }
+
+    private int getUserCount() throws SQLException {
         ResultSet result = getContext().getDBConnector().executeQuery("SELECT count(uid) AS user_count FROM user");
-        result.next();
+        return result.next() ? result.getInt("user_count") : -1;
+    }
+
+    private int getPostCount() throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery("SELECT count(pid) AS post_count FROM post");
+        return result.next() ? result.getInt("post_count") : -1;
+    }
+
+    public JSONObject getServerStatus() throws SQLException {
         JSONObject status = new JSONObject();
-        status.put("user_count", result.getInt("user_count"));
+        status.put("user_count", getUserCount());
+        status.put("post_count", getPostCount());
         return status;
     }
 

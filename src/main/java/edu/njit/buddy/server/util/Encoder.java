@@ -1,6 +1,6 @@
 package edu.njit.buddy.server.util;
 
-import edu.njit.buddy.server.ServerException;
+import edu.njit.buddy.server.exceptions.ServerException;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

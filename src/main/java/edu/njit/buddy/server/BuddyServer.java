@@ -1,5 +1,6 @@
 package edu.njit.buddy.server;
 
+import edu.njit.buddy.server.exceptions.ServerException;
 import edu.njit.buddy.server.service.*;
 import edu.njit.buddy.server.service.web.AdministratorLoginService;
 import edu.njit.buddy.server.service.web.DashboardService;
@@ -74,6 +75,7 @@ public class BuddyServer implements Context {
         getHttpServer().getServerConfiguration().addHttpHandler(new RegisterService(this), "/register");
         getHttpServer().getServerConfiguration().addHttpHandler(new LoginService(this), "/login");
         getHttpServer().getServerConfiguration().addHttpHandler(new PostCreateService(this), "/post/create");
+        getHttpServer().getServerConfiguration().addHttpHandler(new PostDeleteService(this), "/post/delete");
         getHttpServer().getServerConfiguration().addHttpHandler(new FlagService(this), "/post/flag");
         getHttpServer().getServerConfiguration().addHttpHandler(new BellService(this), "/post/bell");
         getHttpServer().getServerConfiguration().addHttpHandler(new HugService(this), "/post/hug");

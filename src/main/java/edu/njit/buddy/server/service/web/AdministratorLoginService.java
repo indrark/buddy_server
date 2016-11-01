@@ -1,7 +1,7 @@
 package edu.njit.buddy.server.service.web;
 
 import edu.njit.buddy.server.Context;
-import edu.njit.buddy.server.PasswordMismatchException;
+import edu.njit.buddy.server.exceptions.PasswordMismatchException;
 import org.glassfish.grizzly.http.Cookie;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.server.Request;

@@ -1,5 +1,7 @@
 package edu.njit.buddy.server;
 
+import edu.njit.buddy.server.exceptions.ServerException;
+
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;

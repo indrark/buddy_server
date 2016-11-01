@@ -1,6 +1,9 @@
 package edu.njit.buddy.server.service;
 
-import edu.njit.buddy.server.*;
+import edu.njit.buddy.server.Context;
+import edu.njit.buddy.server.RequestWrapper;
+import edu.njit.buddy.server.ResponseCode;
+import edu.njit.buddy.server.exceptions.AccessDeniedException;
 import edu.njit.buddy.server.exceptions.PostNotFoundException;
 import edu.njit.buddy.server.exceptions.ServerException;
 import org.glassfish.grizzly.http.server.Response;
@@ -9,11 +12,11 @@ import org.json.JSONException;
 import java.sql.SQLException;
 
 /**
- * @author toyknight 3/3/2016.
+ * @author toyknight 10/31/2016.
  */
-public class BellService extends Service {
+public class PostDeleteService extends Service {
 
-    public BellService(Context context) {
+    public PostDeleteService(Context context) {
         super(context, true);
     }
 
@@ -21,11 +24,11 @@ public class BellService extends Service {
     public void service(RequestWrapper request, Response response) throws ServerException, SQLException, JSONException {
         int pid = request.getBody().getInt("pid");
         try {
-            getContext().getDBManager().bell(request.getUID(), pid);
-            onSuccess(response);
+            getContext().getDBManager().deletePost(request.getUID(), pid);
         } catch (PostNotFoundException ex) {
             onFail(response, ResponseCode.POST_NOT_FOUND);
+        } catch (AccessDeniedException ex) {
+            onFail(response, ResponseCode.ACCESS_DENIED);
         }
     }
-
 }

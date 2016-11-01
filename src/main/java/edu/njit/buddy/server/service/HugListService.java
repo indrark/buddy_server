@@ -1,6 +1,8 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.*;
+import edu.njit.buddy.server.exceptions.PostNotFoundException;
+import edu.njit.buddy.server.exceptions.ServerException;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;
 import org.json.JSONObject;

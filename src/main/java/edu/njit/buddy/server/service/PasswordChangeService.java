@@ -1,6 +1,8 @@
 package edu.njit.buddy.server.service;
 
 import edu.njit.buddy.server.*;
+import edu.njit.buddy.server.exceptions.PasswordMismatchException;
+import edu.njit.buddy.server.exceptions.ServerException;
 import edu.njit.buddy.server.util.PasswordValidator;
 import org.glassfish.grizzly.http.server.Response;
 import org.json.JSONException;

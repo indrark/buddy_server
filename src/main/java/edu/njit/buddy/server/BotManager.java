@@ -1,5 +1,7 @@
 package edu.njit.buddy.server;
 
+import edu.njit.buddy.server.exceptions.ServerException;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;

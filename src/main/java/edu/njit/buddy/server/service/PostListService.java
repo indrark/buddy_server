@@ -24,9 +24,10 @@ public class PostListService extends Service {
         int category = request.getBody().has("category") ? request.getBody().getInt("category") : -1;
         int attention = request.getBody().has("attention") ? request.getBody().getInt("attention") : 0;
         int target_uid = request.getBody().has("target_uid") ? request.getBody().getInt("target_uid") : 0;
+        int flagged = request.getBody().has("flagged") ? request.getBody().getInt("flagged") : 0;
         if (page >= 0) {
             JSONObject response_content = getContext().getDBManager().listPosts(
-                    request.getUID(), page, category, attention, target_uid);
+                    request.getUID(), page, category, attention, target_uid, flagged);
             onSuccess(response, response_content);
         } else {
             onFail(response, ResponseCode.NEGATIVE_PAGE_NUMBER);

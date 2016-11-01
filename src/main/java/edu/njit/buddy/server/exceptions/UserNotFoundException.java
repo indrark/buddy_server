@@ -1,4 +1,4 @@
-package edu.njit.buddy.server.service;
+package edu.njit.buddy.server.exceptions;
 
 /**
  * @author toyknight 3/5/2016.
