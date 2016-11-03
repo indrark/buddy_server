@@ -25,6 +25,7 @@ public class PostDeleteService extends Service {
         int pid = request.getBody().getInt("pid");
         try {
             getContext().getDBManager().deletePost(request.getUID(), pid);
+            onSuccess(response);
         } catch (PostNotFoundException ex) {
             onFail(response, ResponseCode.POST_NOT_FOUND);
         } catch (AccessDeniedException ex) {

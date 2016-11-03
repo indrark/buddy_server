@@ -153,7 +153,7 @@ function tryDeletePost(pid) {
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function(data){
-                refreshCurrentPostPage();
+                onPostDeletingFinish(data);
             },
             failure: function(errMsg) {
                 alert("Operation failed! " + errMsg);
