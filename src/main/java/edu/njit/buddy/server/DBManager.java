@@ -34,6 +34,12 @@ public class DBManager {
         return result.getInt(1) == 0;
     }
 
+    public boolean isExistingUser(int uid) throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(
+                String.format("SELECT uid FROM user WHERE uid = %d", uid));
+        return result.next();
+    }
+
     public boolean isExistingPost(int pid) throws SQLException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 String.format("SELECT pid FROM post WHERE pid = %d", pid));
@@ -135,9 +141,13 @@ public class DBManager {
         }
     }
 
-    public void setPassword(int uid, String password) throws ServerException, SQLException {
-        getContext().getDBConnector().executeUpdate(String.format(
-                "UPDATE user SET password = '%s' WHERE uid = '%d'", Encoder.encode(password), uid));
+    public void setPassword(int uid, String password) throws SQLException, ServerException, UserNotFoundException {
+        if (isExistingUser(uid)) {
+            getContext().getDBConnector().executeUpdate(String.format(
+                    "UPDATE user SET password = '%s' WHERE uid = '%d'", Encoder.encode(password), uid));
+        } else {
+            throw new UserNotFoundException();
+        }
     }
 
     public void post(int uid, int category, String content) throws SQLException {
@@ -150,7 +160,7 @@ public class DBManager {
         getContext().getDBConnector().executeUpdate(sql);
     }
 
-    public void deletePost(int uid, int pid) throws SQLException, ServerException {
+    public void deletePost(int uid, int pid) throws SQLException, ServerException, PostNotFoundException {
         int post_uid = getPostUID(pid);
         if (post_uid > 0) {
             if (uid == post_uid) {
@@ -163,7 +173,7 @@ public class DBManager {
                 }
             }
         } else {
-            throw new PostNotFoundException(String.format("Post [%d] not found!", pid));
+            throw new PostNotFoundException();
         }
     }
 
@@ -175,7 +185,7 @@ public class DBManager {
         getContext().getDBConnector().executeUpdate(String.format("DELETE FROM comment WHERE pid = '%d'", pid));
     }
 
-    public void flag(int uid, int pid) throws SQLException, ServerException {
+    public void flag(int uid, int pid) throws SQLException, ServerException, PostNotFoundException {
         if (isExistingPost(pid)) {
             ResultSet result = getContext().getDBConnector().executeQuery(
                     String.format("SELECT fid FROM flag WHERE uid = %d AND pid = %d", uid, pid));
@@ -188,11 +198,11 @@ public class DBManager {
                         String.format("INSERT INTO flag (uid, pid) VALUES (%d, %d)", uid, pid));
             }
         } else {
-            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+            throw new PostNotFoundException();
         }
     }
 
-    public void bell(int uid, int pid) throws SQLException, ServerException {
+    public void bell(int uid, int pid) throws SQLException, ServerException, PostNotFoundException {
         if (isExistingPost(pid)) {
             ResultSet result = getContext().getDBConnector().executeQuery(
                     String.format("SELECT bid FROM bell WHERE uid = %d AND pid = %d", uid, pid));
@@ -205,11 +215,11 @@ public class DBManager {
                         String.format("INSERT INTO bell (uid, pid) VALUES (%d, %d)", uid, pid));
             }
         } else {
-            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+            throw new PostNotFoundException();
         }
     }
 
-    public void hug(int uid, int pid) throws SQLException, ServerException {
+    public void hug(int uid, int pid) throws SQLException, ServerException, PostNotFoundException {
         if (isExistingPost(pid)) {
             ResultSet result = getContext().getDBConnector().executeQuery(
                     String.format("SELECT hid FROM hug WHERE uid = %d AND pid = %d", uid, pid));
@@ -222,18 +232,18 @@ public class DBManager {
                         String.format("INSERT INTO hug (uid, pid) VALUES (%d, %d)", uid, pid));
             }
         } else {
-            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+            throw new PostNotFoundException();
         }
     }
 
-    public void comment(int uid, int pid, String content) throws SQLException, ServerException {
+    public void comment(int uid, int pid, String content) throws SQLException, ServerException, PostNotFoundException {
         if (isExistingPost(pid)) {
             String sql = String.format(
                     "INSERT INTO comment (uid, pid, content, timestamp) VALUES (%d, %d, '%s', now())",
                     uid, pid, escape(content));
             getContext().getDBConnector().executeUpdate(sql);
         } else {
-            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+            throw new PostNotFoundException();
         }
     }
 
@@ -350,7 +360,8 @@ public class DBManager {
         return posts;
     }
 
-    public JSONObject listHugs(int pid, int page) throws SQLException, ServerException, JSONException {
+    public JSONObject listHugs(int pid, int page)
+            throws SQLException, ServerException, JSONException, PostNotFoundException {
         if (isExistingPost(pid)) {
             String sql = String.format(
                     "SELECT\n" +
@@ -368,7 +379,7 @@ public class DBManager {
             response.put("hugs", hugs);
             return response;
         } else {
-            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+            throw new PostNotFoundException();
         }
     }
 
@@ -383,7 +394,8 @@ public class DBManager {
         return hugs;
     }
 
-    public JSONObject listComments(int pid, int page) throws SQLException, ServerException, JSONException {
+    public JSONObject listComments(int pid, int page)
+            throws SQLException, ServerException, JSONException, PostNotFoundException {
         if (isExistingPost(pid)) {
             ResultSet result = getContext().getDBConnector().executeQuery(
                     String.format(
@@ -403,7 +415,7 @@ public class DBManager {
             response.put("comments", comments);
             return response;
         } else {
-            throw new PostNotFoundException(String.format("post [%d] does not exist", pid));
+            throw new PostNotFoundException();
         }
     }
 
@@ -544,6 +556,25 @@ public class DBManager {
                 String.format("UPDATE user SET using_times = using_times + 1 WHERE uid = %d", uid));
     }
 
+    public JSONObject getUserData(int uid, String email, String username) throws SQLException, UserNotFoundException {
+        String uid_replacer = uid > 0 ? "AND uid = " + uid : "";
+        String email_replacer = email.length() > 0 ? "AND email = '" + escape(email) + "'" : "";
+        String username_replacer = username.length() > 0 ? "AND username = '" + escape(username) + "'" : "";
+        ResultSet result = getContext().getDBConnector().executeQuery(String.format(
+                "SELECT uid, email, username FROM user WHERE uid > 0 %s %s %s",
+                uid_replacer, email_replacer, username_replacer));
+        if (result.next()) {
+            JSONObject data = new JSONObject();
+            data.put("uid", result.getInt("uid"));
+            data.put("email", result.getString("email"));
+            data.put("username", result.getString("username"));
+            data.put("posts", getPostCount(result.getInt("uid")));
+            return data;
+        } else {
+            throw new UserNotFoundException();
+        }
+    }
+
     public int getPostUID(int pid) throws SQLException {
         ResultSet result =
                 getContext().getDBConnector().executeQuery(String.format("SELECT uid FROM post WHERE pid = %s", pid));
@@ -558,6 +589,12 @@ public class DBManager {
     private int getPostCount() throws SQLException {
         ResultSet result = getContext().getDBConnector().executeQuery("SELECT count(pid) AS post_count FROM post");
         return result.next() ? result.getInt("post_count") : -1;
+    }
+
+    private int getPostCount(int uid) throws SQLException {
+        ResultSet result = getContext().getDBConnector().executeQuery(String.format(
+                "SELECT count(pid) AS post_count FROM post WHERE uid = '%d'", uid));
+        return result.next() ? result.getInt("post_count") : 0;
     }
 
     public JSONObject getServerStatus() throws SQLException {

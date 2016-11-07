@@ -19,7 +19,7 @@
     <hr size="1" noshade="" color="#000000">
     <div class="function-header">
         <label class="function-title">Post Management</label>
-        UID&nbsp<input type="number" id="input-uid" min="-1" value="-1">
+        UID&nbsp<input type="number" class="input-search-number" id="input-post-uid" min="-1" value="-1">
         &nbspAttention&nbsp<input type="checkbox" id="checkbox-attention">
         &nbspFlag&nbsp<input type="checkbox" id="checkbox-flag">
         &nbsp<button onclick="trySearchPostPage(0)">Search</button>
@@ -29,9 +29,25 @@
         <button id="post-control-previous" onclick="gotoPreviousPostPage()"><</button>
         <span class="value-display" id="value-current-page">0</span>
         <button id="post-control-next" onclick="gotoNextPostPage()">></button>
+        &nbsp Page: &nbsp
+        <input type="number" class="input-search-number" id="input-target-post-page" min="1" value="1">
+        &nbsp
+        <button id="post-control-goto" onclick="gotoTargetPostPage()">Go</button>
     </div>
     <hr size="1" noshade="" color="#000000">
+    <div class="function-header">
+        <label class="function-title">Comment Management</label>
+    </div>
     <div align="center">Under Construction</div>
+    <hr size="1" noshade="" color="#000000">
+    <div class="function-header">
+        <label class="function-title">User Management</label>
+        UID&nbsp<input type="number" class="input-search-number" id="input-user-uid" min="-1" value="-1">
+        Email&nbsp<input type="email" class="input-search-text" id="input-user-email">
+        Username&nbsp<input type="text" class="input-search-text" id="input-user-username">
+        &nbsp<button onclick="trySearchUser()">Search</button>
+    </div>
+    <div id="user-data" align="center"></div>
 
     <div id="placeholder">
         <div id="placeholder-content">

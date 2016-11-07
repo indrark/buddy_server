@@ -1,5 +1,6 @@
 package edu.njit.buddy.server;
 
+import edu.njit.buddy.server.exceptions.PostNotFoundException;
 import edu.njit.buddy.server.exceptions.ServerException;
 
 import java.sql.ResultSet;
@@ -43,7 +44,7 @@ public class BotManager {
         }
     }
 
-    private void service(int uid, int test_group) throws SQLException, ServerException {
+    private void service(int uid, int test_group) throws SQLException, ServerException, PostNotFoundException {
         ResultSet result = getContext().getDBConnector().executeQuery(
                 String.format("SELECT\n" +
                         "\tpost.pid\n" +
@@ -93,8 +94,8 @@ public class BotManager {
             public void run() {
                 try {
                     service(uid, test_group);
-                } catch (SQLException | ServerException ex) {
-                    getContext().getLogger().log(Level.SEVERE, "Regular bot service error: " + ex.toString());
+                } catch (SQLException | ServerException | PostNotFoundException ex) {
+                    getContext().getLogger().log(Level.SEVERE, "Bot service error: " + ex.toString());
                 }
             }
         };

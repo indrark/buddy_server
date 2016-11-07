@@ -25,18 +25,47 @@
     border: 1px solid #000;
 }
 
+#user-data {
+    padding: 10px;
+}
+
+.user-container {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #000;
+}
+
+.value-post-username {
+    font-weight: bold;
+}
+
+.span-post-content {
+    font-weight: bold;
+    font-size:large;
+}
+
+.span-post-comments {
+    font-weight: bold;
+    color: blue;
+}
+
+.span-post-flags {
+    font-weight: bold;
+    color: red;
+}
+
 .button-post-delete {
     position: absolute;
     right: 10px;
     top: 10px;
 }
 
-.page-control {
-    padding: 10px;
+.input-search-number {
+    width: 50px;
 }
 
-#input-uid {
-    width: 50px;
+.input-search-text {
+    width: 100px;
 }
 
 #placeholder {
