@@ -66,12 +66,16 @@ public class DBManager {
     }
 
     public int getUID(String authorization) throws SQLException, NotAuthorizedException {
-        ResultSet result = getContext().getDBConnector().executeQuery(
-                String.format("SELECT uid FROM user WHERE authorization = '%s'", authorization));
-        if (result.next()) {
-            return result.getInt("uid");
-        } else {
+        if (authorization == null || authorization.length() <= 0) {
             throw new NotAuthorizedException();
+        } else {
+            ResultSet result = getContext().getDBConnector().executeQuery(
+                    String.format("SELECT uid FROM user WHERE authorization = '%s'", authorization));
+            if (result.next()) {
+                return result.getInt("uid");
+            } else {
+                throw new NotAuthorizedException();
+            }
         }
     }
 
@@ -118,7 +122,7 @@ public class DBManager {
                 String.format("SELECT authorization FROM user WHERE uid = '%d'", uid));
         if (result.next()) {
             String authorization = result.getString("authorization");
-            if (authorization == null) {
+            if (authorization == null || authorization.length() <= 0) {
                 authorization = Encoder.encode(email + password + System.currentTimeMillis());
                 getContext().getDBConnector().executeUpdate(String.format(
                         "UPDATE user SET authorization = '%s' WHERE uid = '%d'", authorization, uid));
