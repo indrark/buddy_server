@@ -1,6 +1,8 @@
 package edu.njit.buddy.server;
 
+import edu.njit.buddy.server.exceptions.ServerException;
 import edu.njit.buddy.server.exceptions.TokenExpiredException;
+import edu.njit.buddy.server.util.Encoder;
 
 import java.util.*;
 
@@ -46,7 +48,20 @@ public class TokenManager {
         }
     }
 
-    public boolean checkVerification(String email, String token) throws TokenExpiredException {
+    public String createStringToken(String email) {
+        synchronized (VERIFICATION_LOCK) {
+            try {
+                String token = Encoder.encode(email + System.currentTimeMillis() + new Random().nextInt(999));
+                verification_tokens.put(email, new Token(token));
+                return token;
+            } catch (ServerException e) {
+                verification_tokens.put(email, new Token("null"));
+                return "null";
+            }
+        }
+    }
+
+    public boolean checkToken(String email, String token) throws TokenExpiredException {
         synchronized (VERIFICATION_LOCK) {
             if (verification_tokens.containsKey(email)) {
                 Token stored_token = verification_tokens.get(email);

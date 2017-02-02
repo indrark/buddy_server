@@ -29,7 +29,7 @@ public class RegisterService extends Service {
             if (EmailValidator.validate(email)) {
                 if (PasswordValidator.isValidPassword(password)) {
                     if (getContext().getDBManager().isEmailAvailable(email)) {
-                        if (getContext().getTokenManager().checkVerification(email, verification)) {
+                        if (getContext().getTokenManager().checkToken(email, verification)) {
                             getContext().getDBManager().register(email, username, password);
                             onSuccess(response);
                         } else {
